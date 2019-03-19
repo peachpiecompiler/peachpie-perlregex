@@ -4,9 +4,9 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <PackageId>Peachpie.Library.RegularExpressions</PackageId>
-    <PackageTags>peachpie;regex;perl</PackageTags>
+    <PackageTags>peachpie;regex;perl;pcre</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Description>Regular Expressions library for PeachPie.</Description>
+    <Description>PCRE for PeachPie.</Description>
     <RootNamespace>Peachpie.Library.RegularExpressions</RootNamespace>
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>

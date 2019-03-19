@@ -33,6 +33,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/peachpiecompiler/peachpie-perlregex</RepositoryUrl>
     <PackageProjectUrl>https://github.com/peachpiecompiler/peachpie-perlregex</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageOutputPath>$(MSBuildThisFileDirectory)../output</PackageOutputPath>
     <PackageIconUrl>https://github.com/peachpiecompiler/peachpie/raw/master/docs/logos/round-orange-196x196.png</PackageIconUrl>
   </PropertyGroup>
