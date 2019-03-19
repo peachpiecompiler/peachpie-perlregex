@@ -5,6 +5,11 @@ namespace Peachpie.Library.RegularExpressions.Tests
 {
     public class MatchTest
     {
+        static Match match(string pattern, string subject)
+        {
+            return new Regex(pattern).Match(subject);
+        }
+
         [Fact]
         public void Test1()
         {
@@ -14,6 +19,21 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.NotNull(matches);
             Assert.Single(matches);
             Assert.Equal(4, matches[0].PcreGroups.Count);
+        }
+
+        [Fact]
+        public void TestSubRoutines()
+        {
+            match(@"/([abc])(?1)(?1)/", "abcd");
+            match(@"/([abc](d))(?1)(?1)/", "adcdbd");
+            match(@"/([abc](d))(?:[abc](?:d))(?:[abc](?:d))/", "adcdbd");
+
+            match(@"/^(((?=.*(::))(?!.*\3.+\3))\3?|([\dA-F]{1,4}(\3|:\b|$)|\2))(?4){5}((?4){2}|(((2[0-4]|1\d|[1-9])?\d|25[0-5])\.?\b){4})$/i", "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+            match(@"/\A(\((?>[^()]|(?1))*\))\z/", "(((lorem)ipsum()))");
+            match(@"/\b(([a-z])(?1)(?2)|[a-z])\b/", "racecar");
+            match(@"/\b(([a-z])(?1)(?2)|[a-z])\b/", "none");
+            match(@"/^Name:\ (.*) Born:\ ((?:3[01]|[12][0-9]|[1-9])-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(?:19|20)[0-9][0-9]) Admitted:\ (?2) Released:\ (?2)$/",
+              "Name: John Doe Born: 17-Jan-1964 Admitted: 30-Jul-2013 Released: 3-Aug-2013");
         }
     }
 }

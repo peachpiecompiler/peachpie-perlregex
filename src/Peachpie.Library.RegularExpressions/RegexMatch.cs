@@ -99,7 +99,7 @@ namespace Peachpie.Library.RegularExpressions
             _matches = new int[other._matches.Length][];
             for (int i = 0; i < _matches.Length; i++)
             {
-                _matches[i] = (int[])other._matches[i].Clone();
+                _matches[i] = (int[])other._matches[i]?.Clone();
             }
 
             _textbeg = other._textbeg;
