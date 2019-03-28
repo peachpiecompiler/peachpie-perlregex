@@ -22,6 +22,12 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
+        public void Test2()
+        {
+            Assert.True(match("/\\q\\_\\y/", "q_y").Success);
+        }
+
+        [Fact]
         public void TestSubRoutines()
         {
             match(@"/([abc])(?1)(?1)/", "abcd");

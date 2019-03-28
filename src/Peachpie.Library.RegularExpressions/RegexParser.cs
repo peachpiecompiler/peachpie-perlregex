@@ -1785,8 +1785,6 @@ namespace Peachpie.Library.RegularExpressions
                 case 'c':
                     return ScanControl();
                 default:
-                    if (!UseOptionE() && RegexCharClass.IsWordChar(ch))
-                        throw MakeException(SR.Format(SR.UnrecognizedEscape, ch.ToString()));
                     return ch;
             }
         }
