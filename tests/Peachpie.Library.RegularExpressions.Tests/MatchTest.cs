@@ -10,6 +10,11 @@ namespace Peachpie.Library.RegularExpressions.Tests
             return new Regex(pattern).Match(subject);
         }
 
+        static string replace(string pattern, string replacement, string subject)
+        {
+            return new Regex(pattern).Replace(subject, replacement);
+        }
+
         [Fact]
         public void Test1()
         {
@@ -40,6 +45,16 @@ namespace Peachpie.Library.RegularExpressions.Tests
             match(@"/\b(([a-z])(?1)(?2)|[a-z])\b/", "none");
             match(@"/^Name:\ (.*) Born:\ ((?:3[01]|[12][0-9]|[1-9])-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(?:19|20)[0-9][0-9]) Admitted:\ (?2) Released:\ (?2)$/",
               "Name: John Doe Born: 17-Jan-1964 Admitted: 30-Jul-2013 Released: 3-Aug-2013");
+        }
+
+        [Fact]
+        public void TestReplace()
+        {
+            // In replacement: "\\" -> "\"
+            Assert.Equal(@"\'", replace(@"/(')/", @"\\$1", "'"));
+            Assert.Equal(@"\'", replace(@"/([\\'])/", @"\\$1", "'"));
+            Assert.Equal(@"aaa\'bbb\'aa\\a", replace(@"/([\\'])/", @"\\$1", @"aaa'bbb'aa\a"));
+            Assert.Equal(@"aaa\'/\'/bbb\'/\'/aa\\/\\/a", replace(@"/([\\'])/", @"\\$1/\\$1/", @"aaa'bbb'aa\a"));
         }
     }
 }

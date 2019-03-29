@@ -591,10 +591,20 @@ namespace Peachpie.Library.RegularExpressions
                 while (c > 0 && RightChar() != '$')
                 {
                     // \ref
-                    if (c >= 2 && RightChar() == '\\' && char.IsDigit(RightChar(1)))
+                    if (c >= 2 && RightChar() == '\\')
                     {
-                        backslashref = true;
-                        break;
+                        char secondChar = RightChar(1);
+                        if (char.IsDigit(secondChar))
+                        {
+                            backslashref = true;
+                            break;
+                        }
+                        else if (secondChar == '\\')
+                        {
+                            // Turn two consecutive backslashes into one as per the PCRE rules
+                            AddConcatenate(startpos, Textpos() - startpos + 1, true);
+                            startpos = Textpos() + 2;
+                        }
                     }
 
                     //
