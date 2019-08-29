@@ -1809,8 +1809,14 @@ namespace Peachpie.Library.RegularExpressions
                 throw MakeException(SR.IncompleteSlashP);
             }
             char ch = MoveRightGetChar();
+
             if (ch != '{')
             {
+                if (ch == 'L') // pL ~ shorthand for \p{L}
+                {
+                    return "L";
+                }
+
                 throw MakeException(SR.MalformedSlashP);
             }
 

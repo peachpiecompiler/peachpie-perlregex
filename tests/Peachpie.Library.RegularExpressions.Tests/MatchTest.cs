@@ -56,5 +56,12 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.Equal(@"aaa\'bbb\'aa\\a", replace(@"/([\\'])/", @"\\$1", @"aaa'bbb'aa\a"));
             Assert.Equal(@"aaa\'/\'/bbb\'/\'/aa\\/\\/a", replace(@"/([\\'])/", @"\\$1/\\$1/", @"aaa'bbb'aa\a"));
         }
+
+        [Fact]
+        public void TestCharClass()
+        {
+            // \pL
+            Assert.Equal("....", replace(@"/[\pL\d]+/u", "", "..Letters0123.."));
+        }
     }
 }
