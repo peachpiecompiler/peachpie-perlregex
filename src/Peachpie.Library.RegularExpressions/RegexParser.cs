@@ -1812,12 +1812,22 @@ namespace Peachpie.Library.RegularExpressions
 
             if (ch != '{')
             {
-                if (ch == 'L') // pL ~ shorthand for \p{L}
-                {
-                    return "L";
-                }
+                //if ("LMZSNPC".IndexOf(ch) >= 0) return ch.ToString();
 
-                throw MakeException(SR.MalformedSlashP);
+                switch (ch)
+                {
+                    case 'L':
+                    case 'M':
+                    case 'Z':
+                    case 'S':
+                    case 'N':
+                    case 'P':
+                    case 'C':
+                        // shorthand syntax for \p{Letter}
+                        return ch.ToString();
+                    default:
+                        throw MakeException(SR.MalformedSlashP);
+                }
             }
 
             int startpos = Textpos();
