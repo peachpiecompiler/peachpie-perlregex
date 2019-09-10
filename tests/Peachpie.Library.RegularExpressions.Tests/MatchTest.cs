@@ -5,9 +5,9 @@ namespace Peachpie.Library.RegularExpressions.Tests
 {
     public class MatchTest
     {
-        static Match match(string pattern, string subject)
+        static Match match(string pattern, string subject, int startat = 0)
         {
-            return new Regex(pattern).Match(subject);
+            return new Regex(pattern).Match(subject, startat);
         }
 
         static string replace(string pattern, string replacement, string subject)
@@ -62,6 +62,17 @@ namespace Peachpie.Library.RegularExpressions.Tests
         {
             // \pL
             Assert.Equal("....", replace(@"/[\pL\d]+/u", "", "..Letters0123.."));
+        }
+
+        [Fact]
+        public void TestAnchoredFlag()
+        {
+            Assert.True(match("/fo/A", "foo").Success);
+            Assert.True(match("/fo/A", "barfoo", 3).Success);
+            Assert.False(match("/fo/A", "barfoo").Success);
+            Assert.False(match("/fo|ar/A", "barfoo").Success);
+            Assert.False(match(@"/%\}/A", @"{% foo bar %}", 3).Success);
+            Assert.True(match(@"/%\}/A", @"{% foo bar %}", 11).Success);
         }
     }
 }

@@ -565,6 +565,16 @@ namespace Peachpie.Library.RegularExpressions
 
             AddGroup();
 
+            // '/pattern/A' equals to '/\Gpattern/'
+            if (UseOptionAnchored())
+            {
+                // Prepend \G before the very first capturing group to enable quick termination on non-matching strings
+                var concat = new RegexNode(RegexNode.Concatenate, _options);
+                concat.AddChild(new RegexNode(RegexNode.Start, _options));
+                concat.AddChild(Unit());
+                AddUnitNode(concat);
+            }
+
             return Unit();
         }
 
@@ -2298,6 +2308,11 @@ namespace Peachpie.Library.RegularExpressions
         internal bool UseOptionUtf8()
         {
             return (_options & RegexOptions.PCRE_UTF8) != 0;
+        }
+
+        internal bool UseOptionAnchored()
+        {
+            return (_options & RegexOptions.PCRE_ANCHORED) != 0;
         }
 
         internal const byte Q = 5;    // quantifier
