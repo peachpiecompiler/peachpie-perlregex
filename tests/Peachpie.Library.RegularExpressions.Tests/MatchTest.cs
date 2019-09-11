@@ -74,5 +74,14 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.False(match(@"/%\}/A", @"{% foo bar %}", 3).Success);
             Assert.True(match(@"/%\}/A", @"{% foo bar %}", 11).Success);
         }
+
+        [Fact]
+        public void TestDollarEndOnly()
+        {
+            Assert.True(match("/a$/D", "a").Success);
+            Assert.False(match("/a$/D", "a\n").Success);
+            Assert.True(match("/a$/mD", "a\n").Success);    // 'm' has precedence
+            Assert.True(match("/a$/mD", "a\nb").Success);
+        }
     }
 }

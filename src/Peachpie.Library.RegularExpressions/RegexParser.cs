@@ -437,7 +437,10 @@ namespace Peachpie.Library.RegularExpressions
                         break;
 
                     case '$':
-                        AddUnitType(UseOptionM() ? RegexNode.Eol : RegexNode.EndZ);
+                        AddUnitType(
+                            UseOptionM()
+                            ? RegexNode.Eol
+                            : (UseOptionDollarEndOnly() ? RegexNode.End : RegexNode.EndZ));
                         break;
 
                     case '.':
@@ -2313,6 +2316,11 @@ namespace Peachpie.Library.RegularExpressions
         internal bool UseOptionAnchored()
         {
             return (_options & RegexOptions.PCRE_ANCHORED) != 0;
+        }
+
+        internal bool UseOptionDollarEndOnly()
+        {
+            return (_options & RegexOptions.PCRE_DOLLAR_ENDONLY) != 0;
         }
 
         internal const byte Q = 5;    // quantifier
