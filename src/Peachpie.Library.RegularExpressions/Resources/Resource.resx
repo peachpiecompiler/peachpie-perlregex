@@ -147,4 +147,7 @@
   <data name="regular_expression_empty" xml:space="preserve">
     <value>Empty regular expression</value>
   </data>
+  <data name="unrecognized_character_after_backslash" xml:space="preserve">
+    <value>Unrecognized character '{0}' follows \\ at offset {1}</value>
+  </data>
 </root>

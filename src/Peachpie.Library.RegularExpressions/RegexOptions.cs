@@ -37,17 +37,17 @@ namespace Peachpie.Library.RegularExpressions
         PCRE_DOLLAR_ENDONLY = 0x0800,       // D
         PCRE_UNGREEDY = 0x1000,             // U
         PCRE_UTF8 = 0x2000,                 // u
-        PCRE_EXTRA = 0x3000,                // X
+        PCRE_EXTRA = 0x4000,                // X
 
         /// <summary>
         /// Spend more time studying the pattern - ignoring.
         /// </summary>
-        PCRE_S = 0x4000,                    // S
+        PCRE_S = 0x8000,                    // S
 
         ///// <summary>
         ///// Evaluate as PHP code.
         ///// Deprecated and removed.
         ///// </summary>
-        //PREG_REPLACE_EVAL = 0x8000,        // e
+        //PREG_REPLACE_EVAL = 0x10000,        // e
     }
 }

@@ -269,7 +269,7 @@ namespace Peachpie.Library.RegularExpressions
                         i++;
                         p.Textto(i);
                         if (i < input.Length)
-                            sb.Append(p.ScanCharEscape());
+                            sb.Append(p.ScanCharEscape(allowNonSpecial: true));
                         i = p.Textpos();
                         lastpos = i;
                         while (i < input.Length && input[i] != '\\')
@@ -744,7 +744,7 @@ namespace Peachpie.Library.RegularExpressions
 
                         default:
                             MoveLeft();
-                            ch = ScanCharEscape(); // non-literal character
+                            ch = ScanCharEscape(allowNonSpecial: !UseOptionExtra()); // non-literal character
                             fTranslatedChar = true;
                             break;          // this break will only break out of the switch
                     }
@@ -1373,7 +1373,7 @@ namespace Peachpie.Library.RegularExpressions
             // Not backreference: must be char code
 
             Textto(backpos);
-            ch = ScanCharEscape();
+            ch = ScanCharEscape(allowNonSpecial: !UseOptionExtra());
 
             if (UseOptionI())
                 ch = _culture.TextInfo.ToLower(ch);
@@ -1771,7 +1771,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans \ code for escape codes that map to single Unicode chars.
          */
-        internal char ScanCharEscape()
+        internal char ScanCharEscape(bool allowNonSpecial)
         {
             char ch;
 
@@ -1808,7 +1808,10 @@ namespace Peachpie.Library.RegularExpressions
                 case 'c':
                     return ScanControl();
                 default:
-                    return ch;
+                    if (allowNonSpecial)
+                        return ch;
+                    else
+                        throw new ArgumentException(string.Format(Resource.unrecognized_character_after_backslash, ch, Textpos() - 1));
             }
         }
 
@@ -2288,7 +2291,7 @@ namespace Peachpie.Library.RegularExpressions
         }
 
         /*
-         * True if X option enabling whitespace/comment mode is on.
+         * True if x option enabling whitespace/comment mode is on.
          */
         internal bool UseOptionX()
         {
@@ -2321,6 +2324,11 @@ namespace Peachpie.Library.RegularExpressions
         internal bool UseOptionDollarEndOnly()
         {
             return (_options & RegexOptions.PCRE_DOLLAR_ENDONLY) != 0;
+        }
+
+        internal bool UseOptionExtra()
+        {
+            return (_options & RegexOptions.PCRE_EXTRA) != 0;
         }
 
         internal const byte Q = 5;    // quantifier

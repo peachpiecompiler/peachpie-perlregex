@@ -19,7 +19,7 @@ namespace Peachpie.Library.RegularExpressions.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resource {
@@ -147,6 +147,15 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         internal static string regular_expression_empty {
             get {
                 return ResourceManager.GetString("regular_expression_empty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized character &apos;{0}&apos; follows \\ at offset {1}.
+        /// </summary>
+        internal static string unrecognized_character_after_backslash {
+            get {
+                return ResourceManager.GetString("unrecognized_character_after_backslash", resourceCulture);
             }
         }
     }

@@ -83,5 +83,13 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.True(match("/a$/mD", "a\n").Success);    // 'm' has precedence
             Assert.True(match("/a$/mD", "a\nb").Success);
         }
+
+        [Fact]
+        public void TestExtra()
+        {
+            Assert.True(match(@"/\j/", "j").Success);
+            Assert.Throws<ArgumentException>(() => match(@"/\j/X", "j"));
+            Assert.Throws<ArgumentException>(() => match(@"/[\j]+/X", "j"));
+        }
     }
 }
