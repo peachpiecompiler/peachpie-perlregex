@@ -224,7 +224,7 @@ namespace Peachpie.Library.RegularExpressions
                     return 3;
 
                 default:
-                    throw new ArgumentException(SR.Format(SR.UnexpectedOpcode, opcode.ToString(CultureInfo.CurrentCulture)));
+                    throw new ArgumentException(string.Format(SR.UnexpectedOpcode, opcode.ToString()));
             }
         }
 

@@ -31,7 +31,11 @@ namespace Peachpie.Library.RegularExpressions
 
         string _pattern;
         int _currentPos;
-        CultureInfo _culture;
+
+        /// <summary>Relative offset of the <see cref="_pattern"/> within the actual input string.</summary>
+        int _offsetPos;
+
+        readonly CultureInfo _culture;
 
         int _autocap;
         int _capcount;
@@ -62,7 +66,7 @@ namespace Peachpie.Library.RegularExpressions
         {
             int end;
             op |= TrimPcreRegexOption(re, out end);
-            var pattern = TrimDelimiters(re, end);
+            var pattern = TrimDelimiters(re, end, out var offset);
 
             RegexParser p;
             RegexNode root;
@@ -72,7 +76,7 @@ namespace Peachpie.Library.RegularExpressions
 
             p._options = op;
 
-            p.SetPattern(pattern);
+            p.SetPattern(pattern, offset);
             p.CountCaptures();
             p.Reset(op);
             root = p.ScanRegex();
@@ -88,7 +92,7 @@ namespace Peachpie.Library.RegularExpressions
         /// <summary>
         /// Matches end and start delimiters and returns enclosed pattern.
         /// </summary>
-        private static string TrimDelimiters(string re, int end)
+        private static string TrimDelimiters(string re, int end, out int offset)
         {
             Debug.Assert(re != null);
             Debug.Assert(end <= re.Length);
@@ -100,7 +104,7 @@ namespace Peachpie.Library.RegularExpressions
 
                 if (char.IsLetterOrDigit(end_delimiter) || end_delimiter == '\\')
                 {
-                    throw new ArgumentException(Resource.delimiter_alnum_backslash);
+                    throw new RegexParseException(end, Resource.delimiter_alnum_backslash);
                 }
 
                 char start_delimiter;
@@ -121,16 +125,17 @@ namespace Peachpie.Library.RegularExpressions
                 {
                     if (re[i] == start_delimiter)
                     {
-                        return re.Substring(i + 1, end - i - 2);
+                        offset = i + 1;
+                        return re.Substring(offset, end - offset - 1);
                     }
                     else
                     {
-                        throw new ArgumentException(string.Format(Resource.preg_no_end_delimiter, start_delimiter));
+                        throw new RegexParseException(i, string.Format(Resource.preg_no_end_delimiter, start_delimiter));
                     }
                 }
             }
 
-            throw new ArgumentException(Resource.regular_expression_empty);
+            throw new RegexParseException(0, Resource.regular_expression_empty);
         }
 
         /// <summary>
@@ -157,7 +162,7 @@ namespace Peachpie.Library.RegularExpressions
                 var ch = pattern[i];
                 if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))
                 {
-                    result |= PcreOptionFromCode(ch);
+                    result |= PcreOptionFromCode(ch, i);
                 }
                 else
                 {
@@ -188,7 +193,7 @@ namespace Peachpie.Library.RegularExpressions
             p._options = op;
 
             p.NoteCaptures(caps, capsize, capnames);
-            p.SetPattern(rep);
+            p.SetPattern(rep, 0);
             root = p.ScanReplacement();
 
             return new RegexReplacement(rep, root, caps);
@@ -261,7 +266,7 @@ namespace Peachpie.Library.RegularExpressions
                     var sb = new StringBuilder();
                     RegexParser p = new RegexParser(CultureInfo.InvariantCulture);
                     int lastpos;
-                    p.SetPattern(input);
+                    p.SetPattern(input, 0);
 
                     sb.Append(input, 0, i);
                     do
@@ -297,11 +302,15 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Drops a string into the pattern buffer.
          */
-        internal void SetPattern(string Re)
+        internal void SetPattern(string Re, int ReOffset)
         {
             if (Re == null)
+            {
                 Re = string.Empty;
+            }
+
             _pattern = Re;
+            _offsetPos = ReOffset;
             _currentPos = 0;
         }
 
@@ -456,13 +465,13 @@ namespace Peachpie.Library.RegularExpressions
                     case '?':
                         if (Unit() == null)
                             throw MakeException(wasPrevQuantifier ?
-                                                SR.Format(SR.NestedQuantify, ch.ToString()) :
+                                                string.Format(SR.NestedQuantify, ch.ToString()) :
                                                 SR.QuantifyAfterNothing);
                         MoveLeft();
                         break;
 
                     default:
-                        throw MakeException(SR.InternalError);
+                        throw MakeException(SR.InternalError_ScanRegex);
                 }
 
                 ScanBlank();
@@ -525,7 +534,7 @@ namespace Peachpie.Library.RegularExpressions
                             break;
 
                         default:
-                            throw MakeException(SR.InternalError);
+                            throw MakeException(SR.InternalError_ScanRegex);
                     }
 
                     ScanBlank();
@@ -556,11 +565,11 @@ namespace Peachpie.Library.RegularExpressions
                     AddConcatenate(lazy, possessive, min, max);
                 }
 
-                ContinueOuterScan:
+            ContinueOuterScan:
                 ;
             }
 
-            BreakOuterScan:
+        BreakOuterScan:
             ;
 
             if (!EmptyStack())
@@ -698,7 +707,7 @@ namespace Peachpie.Library.RegularExpressions
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(SR.Format(SR.BadClassInCharRange, ch.ToString()));
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
                                 cc.AddDigit(UseOptionE(), ch == 'D', _pattern);
                             }
                             continue;
@@ -708,7 +717,7 @@ namespace Peachpie.Library.RegularExpressions
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(SR.Format(SR.BadClassInCharRange, ch.ToString()));
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
                                 cc.AddSpace(UseOptionE(), ch == 'S');
                             }
                             continue;
@@ -718,7 +727,7 @@ namespace Peachpie.Library.RegularExpressions
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(SR.Format(SR.BadClassInCharRange, ch.ToString()));
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
 
                                 cc.AddWord(UseOptionE(), ch == 'W');
                             }
@@ -729,7 +738,7 @@ namespace Peachpie.Library.RegularExpressions
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(SR.Format(SR.BadClassInCharRange, ch.ToString()));
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
                                 cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _pattern);
                             }
                             else
@@ -887,7 +896,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (IsCaptureName(capname, out var slot))
                         return new RegexNode(RegexNode.Ref, _options, slot);
                     else
-                        throw MakeException(SR.Format(SR.UndefinedNameRef, capname));
+                        throw MakeException(string.Format(SR.UndefinedNameRef, capname));
                 }
                 else
                 {
@@ -899,7 +908,7 @@ namespace Peachpie.Library.RegularExpressions
                 var pindex = ScanDecimal();
 
                 if (!IsCaptureSlot(pindex))
-                    throw MakeException(SR.Format(SR.UndefinedSubpattern, pindex.ToString(CultureInfo.CurrentCulture)));
+                    throw MakeException(string.Format(SR.UndefinedSubpattern, pindex.ToString()));
 
                 if (CharsRight() == 0 || MoveRightGetChar() != ')')
                 {
@@ -1015,7 +1024,7 @@ namespace Peachpie.Library.RegularExpressions
                                         uncapnum = ScanDecimal();
 
                                         if (!IsCaptureSlot(uncapnum))
-                                            throw MakeException(SR.Format(SR.UndefinedBackref, uncapnum));
+                                            throw MakeException(string.Format(SR.UndefinedBackref, uncapnum));
 
                                         // check if we have bogus characters after the number
                                         if (CharsRight() > 0 && RightChar() != close)
@@ -1026,7 +1035,7 @@ namespace Peachpie.Library.RegularExpressions
                                         string uncapname = ScanCapname();
 
                                         if (!IsCaptureName(uncapname, out uncapnum))
-                                            throw MakeException(SR.Format(SR.UndefinedNameRef, uncapname));
+                                            throw MakeException(string.Format(SR.UndefinedNameRef, uncapname));
 
                                         // check if we have bogus character after the name
                                         if (CharsRight() > 0 && RightChar() != close)
@@ -1067,10 +1076,10 @@ namespace Peachpie.Library.RegularExpressions
                                     if (IsCaptureSlot(capnum))
                                         return new RegexNode(RegexNode.Testref, _options, capnum);
                                     else
-                                        throw MakeException(SR.Format(SR.UndefinedReference, capnum.ToString(CultureInfo.CurrentCulture)));
+                                        throw MakeException(string.Format(SR.UndefinedReference, capnum.ToString()));
                                 }
                                 else
-                                    throw MakeException(SR.Format(SR.MalformedReference, capnum.ToString(CultureInfo.CurrentCulture)));
+                                    throw MakeException(string.Format(SR.MalformedReference, capnum.ToString()));
                             }
                             else if (RegexCharClass.IsWordChar(ch))
                             {
@@ -1125,7 +1134,7 @@ namespace Peachpie.Library.RegularExpressions
                 return new RegexNode(NodeType, _options);
             }
 
-            BreakRecognize:
+        BreakRecognize:
             ;
             // break Recognize comes here
 
@@ -1322,7 +1331,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (IsCaptureSlot(capnum))
                         return new RegexNode(RegexNode.Ref, _options, capnum);
                     else
-                        throw MakeException(SR.Format(SR.UndefinedBackref, capnum.ToString(CultureInfo.CurrentCulture)));
+                        throw MakeException(string.Format(SR.UndefinedBackref, capnum.ToString()));
                 }
             }
 
@@ -1353,7 +1362,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (IsCaptureSlot(capnum))
                         return new RegexNode(RegexNode.Ref, _options, capnum);
                     else if (capnum <= 9)
-                        throw MakeException(SR.Format(SR.UndefinedBackref, capnum.ToString(CultureInfo.CurrentCulture)));
+                        throw MakeException(string.Format(SR.UndefinedBackref, capnum.ToString()));
                 }
             }
 
@@ -1366,7 +1375,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (IsCaptureName(capname, out var slot))
                         return new RegexNode(RegexNode.Ref, _options, slot);
                     else
-                        throw MakeException(SR.Format(SR.UndefinedNameRef, capname));
+                        throw MakeException(string.Format(SR.UndefinedNameRef, capname));
                 }
             }
 
@@ -1809,9 +1818,14 @@ namespace Peachpie.Library.RegularExpressions
                     return ScanControl();
                 default:
                     if (allowNonSpecial)
+                    {
                         return ch;
+                    }
                     else
-                        throw new ArgumentException(string.Format(Resource.unrecognized_character_after_backslash, ch, Textpos() - 1));
+                    {
+                        MoveLeft();
+                        throw MakeException(string.Format(Resource.unrecognized_character_after_backslash, ch));
+                    }
             }
         }
 
@@ -1935,7 +1949,8 @@ namespace Peachpie.Library.RegularExpressions
         /// Gets PCRE option value.
         /// </summary>
         /// <param name="option">PCRE option character. Case sensitive.</param>
-        public static RegexOptions PcreOptionFromCode(char option)
+        /// <param name="offset">Position in the source string.</param>
+        public static RegexOptions PcreOptionFromCode(char option, int offset)
         {
             Debug.Assert(char.IsLetter(option));
 
@@ -1953,8 +1968,9 @@ namespace Peachpie.Library.RegularExpressions
                 case 'x': // PCRE_EXTENDED
                     return RegexOptions.PCRE_EXTENDED;
 
-                //case 'e': // PREG_REPLACE_EVAL // deprecated as of PHP 7.0
-                //    return PerlRegexOptions.PREG_REPLACE_EVAL;
+                case 'e': // PREG_REPLACE_EVAL // deprecated as of PHP 7.0
+                    //return RegexOptions.PREG_REPLACE_EVAL;
+                    return 0;
 
                 case 'A': // PCRE_ANCHORED
                     return RegexOptions.PCRE_ANCHORED;
@@ -1975,7 +1991,7 @@ namespace Peachpie.Library.RegularExpressions
                     return RegexOptions.PCRE_EXTRA;
 
                 default:
-                    //throw new ArgumentException(string.Format(Resource.modifier_unknown, option.ToString()));
+                    //throw new RegexParseException(offset, string.Format(Resource.modifier_unknown, option.ToString()));
                     Trace.WriteLine(string.Format(Resource.modifier_unknown, option.ToString()));
                     return 0;
             }
@@ -2664,7 +2680,7 @@ namespace Peachpie.Library.RegularExpressions
          */
         internal ArgumentException MakeException(string message)
         {
-            return new ArgumentException(SR.Format(SR.MakeException, _pattern, message));
+            return new RegexParseException(_currentPos + _offsetPos, message);
         }
 
         /*

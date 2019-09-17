@@ -61,11 +61,218 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Alternation conditions do not capture and cannot be named..
+        /// </summary>
+        internal static string AlternationCantCapture {
+            get {
+                return ResourceManager.GetString("AlternationCantCapture", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alternation conditions cannot be comments..
+        /// </summary>
+        internal static string AlternationCantHaveComment {
+            get {
+                return ResourceManager.GetString("AlternationCantHaveComment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Destination array is not long enough to copy all the items in the collection. Check array index and length..
+        /// </summary>
+        internal static string Arg_ArrayPlusOffTooSmall {
+            get {
+                return ResourceManager.GetString("Arg_ArrayPlusOffTooSmall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The array cannot contain null elements..
+        /// </summary>
+        internal static string ArgumentNull_ArrayWithNullElements {
+            get {
+                return ResourceManager.GetString("ArgumentNull_ArrayWithNullElements", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot include class \\{0} in character range..
+        /// </summary>
+        internal static string BadClassInCharRange {
+            get {
+                return ResourceManager.GetString("BadClassInCharRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start index cannot be less than 0 or greater than input length..
+        /// </summary>
+        internal static string BeginIndexNotNegative {
+            get {
+                return ResourceManager.GetString("BeginIndexNotNegative", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Capture number cannot be zero..
+        /// </summary>
+        internal static string CapnumNotZero {
+            get {
+                return ResourceManager.GetString("CapnumNotZero", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Capture group numbers must be less than or equal to Int32.MaxValue..
+        /// </summary>
+        internal static string CaptureGroupOutOfRange {
+            get {
+                return ResourceManager.GetString("CaptureGroupOutOfRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Count cannot be less than -1..
+        /// </summary>
+        internal static string CountTooSmall {
+            get {
+                return ResourceManager.GetString("CountTooSmall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Delimiter must not be alphanumeric or backslash.
         /// </summary>
         internal static string delimiter_alnum_backslash {
             get {
                 return ResourceManager.GetString("delimiter_alnum_backslash", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enumeration has either not started or has already finished..
+        /// </summary>
+        internal static string EnumNotStarted {
+            get {
+                return ResourceManager.GetString("EnumNotStarted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Illegal conditional (?(...)) expression..
+        /// </summary>
+        internal static string IllegalCondition {
+            get {
+                return ResourceManager.GetString("IllegalCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AppDomain data &apos;{0}&apos; contains the invalid value or object &apos;{1}&apos; for specifying a default matching timeout for System.Text.RegularExpressions.Regex..
+        /// </summary>
+        internal static string IllegalDefaultRegexMatchTimeoutInAppDomain {
+            get {
+                return ResourceManager.GetString("IllegalDefaultRegexMatchTimeoutInAppDomain", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Illegal \\ at end of pattern..
+        /// </summary>
+        internal static string IllegalEndEscape {
+            get {
+                return ResourceManager.GetString("IllegalEndEscape", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Illegal {x,y} with x &gt; y..
+        /// </summary>
+        internal static string IllegalRange {
+            get {
+                return ResourceManager.GetString("IllegalRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Incomplete \\p{X} character escape..
+        /// </summary>
+        internal static string IncompleteSlashP {
+            get {
+                return ResourceManager.GetString("IncompleteSlashP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Internal error in ScanRegex..
+        /// </summary>
+        internal static string InternalError_ScanRegex {
+            get {
+                return ResourceManager.GetString("InternalError_ScanRegex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Argument {0} cannot be zero-length..
+        /// </summary>
+        internal static string InvalidEmptyArgument {
+            get {
+                return ResourceManager.GetString("InvalidEmptyArgument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid group name: Group names must begin with a word character..
+        /// </summary>
+        internal static string InvalidGroupName {
+            get {
+                return ResourceManager.GetString("InvalidGroupName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Length cannot be less than 0 or exceed input length..
+        /// </summary>
+        internal static string LengthNotNegative {
+            get {
+                return ResourceManager.GetString("LengthNotNegative", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Malformed \\k&lt;...&gt; named back reference..
+        /// </summary>
+        internal static string MalformedNameRef {
+            get {
+                return ResourceManager.GetString("MalformedNameRef", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (?({0}) ) malformed..
+        /// </summary>
+        internal static string MalformedReference {
+            get {
+                return ResourceManager.GetString("MalformedReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Malformed \\p{X} character escape..
+        /// </summary>
+        internal static string MalformedSlashP {
+            get {
+                return ResourceManager.GetString("MalformedSlashP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Missing control character..
+        /// </summary>
+        internal static string MissingControl {
+            get {
+                return ResourceManager.GetString("MissingControl", resourceCulture);
             }
         }
         
@@ -97,6 +304,60 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Nested quantifier &apos;{0}&apos;..
+        /// </summary>
+        internal static string NestedQuantify {
+            get {
+                return ResourceManager.GetString("NestedQuantify", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Result cannot be called on a failed Match..
+        /// </summary>
+        internal static string NoResultOnFailed {
+            get {
+                return ResourceManager.GetString("NoResultOnFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not enough )&apos;s..
+        /// </summary>
+        internal static string NotEnoughParens {
+            get {
+                return ResourceManager.GetString("NotEnoughParens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Collection is read-only..
+        /// </summary>
+        internal static string NotSupported_ReadOnlyCollection {
+            get {
+                return ResourceManager.GetString("NotSupported_ReadOnlyCollection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This operation is only allowed once per object..
+        /// </summary>
+        internal static string OnlyAllowedOnce {
+            get {
+                return ResourceManager.GetString("OnlyAllowedOnce", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This platform does not support writing compiled regular expressions to an assembly..
+        /// </summary>
+        internal static string PlatformNotSupported_CompileToAssembly {
+            get {
+                return ResourceManager.GetString("PlatformNotSupported_CompileToAssembly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to PREG_PATTERN_ORDER and PREG_SET_ORDER flags are mutually exclusive.
         /// </summary>
         internal static string preg_match_pattern_set_order {
@@ -111,6 +372,24 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         internal static string preg_no_end_delimiter {
             get {
                 return ResourceManager.GetString("preg_no_end_delimiter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Quantifier {x,y} following nothing..
+        /// </summary>
+        internal static string QuantifyAfterNothing {
+            get {
+                return ResourceManager.GetString("QuantifyAfterNothing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The RegEx engine has timed out while trying to match a pattern to an input string. This can occur for many reasons, including very large inputs or excessive backtracking caused by nested quantifiers, back-references and other factors..
+        /// </summary>
+        internal static string RegexMatchTimeoutException_Occurred {
+            get {
+                return ResourceManager.GetString("RegexMatchTimeoutException_Occurred", resourceCulture);
             }
         }
         
@@ -151,11 +430,173 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unrecognized character &apos;{0}&apos; follows \\ at offset {1}.
+        ///   Looks up a localized string similar to Replacement pattern error..
+        /// </summary>
+        internal static string ReplacementError {
+            get {
+                return ResourceManager.GetString("ReplacementError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [x-y] range in reverse order..
+        /// </summary>
+        internal static string ReversedCharRange {
+            get {
+                return ResourceManager.GetString("ReversedCharRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A subtraction must be the last element in a character class..
+        /// </summary>
+        internal static string SubtractionMustBeLast {
+            get {
+                return ResourceManager.GetString("SubtractionMustBeLast", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Insufficient hexadecimal digits..
+        /// </summary>
+        internal static string TooFewHex {
+            get {
+                return ResourceManager.GetString("TooFewHex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Too many | in (?()|)..
+        /// </summary>
+        internal static string TooManyAlternates {
+            get {
+                return ResourceManager.GetString("TooManyAlternates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Too many )&apos;s..
+        /// </summary>
+        internal static string TooManyParens {
+            get {
+                return ResourceManager.GetString("TooManyParens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reference to undefined group number {0}..
+        /// </summary>
+        internal static string UndefinedBackref {
+            get {
+                return ResourceManager.GetString("UndefinedBackref", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reference to undefined group name &apos;{0}&apos;..
+        /// </summary>
+        internal static string UndefinedNameRef {
+            get {
+                return ResourceManager.GetString("UndefinedNameRef", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (?({0}) ) reference to undefined group..
+        /// </summary>
+        internal static string UndefinedReference {
+            get {
+                return ResourceManager.GetString("UndefinedReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reference to undefined subpattern {0}..
+        /// </summary>
+        internal static string UndefinedSubpattern {
+            get {
+                return ResourceManager.GetString("UndefinedSubpattern", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unexpected opcode in regular expression generation: {0}..
+        /// </summary>
+        internal static string UnexpectedOpcode {
+            get {
+                return ResourceManager.GetString("UnexpectedOpcode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unimplemented state..
+        /// </summary>
+        internal static string UnimplementedState {
+            get {
+                return ResourceManager.GetString("UnimplementedState", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown property &apos;{0}&apos;..
+        /// </summary>
+        internal static string UnknownProperty {
+            get {
+                return ResourceManager.GetString("UnknownProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized character &apos;{0}&apos; follows \\.
         /// </summary>
         internal static string unrecognized_character_after_backslash {
             get {
                 return ResourceManager.GetString("unrecognized_character_after_backslash", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized control character..
+        /// </summary>
+        internal static string UnrecognizedControl {
+            get {
+                return ResourceManager.GetString("UnrecognizedControl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized escape sequence \\{0}..
+        /// </summary>
+        internal static string UnrecognizedEscape {
+            get {
+                return ResourceManager.GetString("UnrecognizedEscape", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unrecognized grouping construct..
+        /// </summary>
+        internal static string UnrecognizedGrouping {
+            get {
+                return ResourceManager.GetString("UnrecognizedGrouping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unterminated [] set..
+        /// </summary>
+        internal static string UnterminatedBracket {
+            get {
+                return ResourceManager.GetString("UnterminatedBracket", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unterminated (?#...) comment..
+        /// </summary>
+        internal static string UnterminatedComment {
+            get {
+                return ResourceManager.GetString("UnterminatedComment", resourceCulture);
             }
         }
     }

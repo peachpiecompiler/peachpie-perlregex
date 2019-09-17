@@ -525,7 +525,7 @@ namespace Peachpie.Library.RegularExpressions
                     break;
 
                 default:
-                    throw new ArgumentException(SR.Format(SR.UnexpectedOpcode, NodeType.ToString(CultureInfo.CurrentCulture)));
+                    throw new ArgumentException(string.Format(SR.UnexpectedOpcode, NodeType.ToString()));
             }
         }
     }

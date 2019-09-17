@@ -12,6 +12,7 @@
 // sequences of codes.
 //
 
+using Peachpie.Library.RegularExpressions.Resources;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -576,7 +577,7 @@ namespace Peachpie.Library.RegularExpressions
                     break;
 
                 default:
-                    throw new ArgumentException(SR.Format(SR.UnexpectedOpcode, nodetype.ToString(CultureInfo.CurrentCulture)));
+                    throw new ArgumentException(string.Format(SR.UnexpectedOpcode, nodetype.ToString()));
             }
         }
     }

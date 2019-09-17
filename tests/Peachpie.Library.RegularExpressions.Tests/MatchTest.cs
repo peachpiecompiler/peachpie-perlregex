@@ -90,8 +90,8 @@ namespace Peachpie.Library.RegularExpressions.Tests
         public void TestExtra()
         {
             Assert.True(match(@"/\j/", "j").Success);
-            Assert.Throws<ArgumentException>(() => match(@"/\j/X", "j"));
-            Assert.Throws<ArgumentException>(() => match(@"/[\j]+/X", "j"));
+            Assert.Throws<RegexParseException>(() => match(@"/\j/X", "j"));
+            Assert.Throws<RegexParseException>(() => match(@"/[\j]+/X", "j"));
         }
     }
 }
