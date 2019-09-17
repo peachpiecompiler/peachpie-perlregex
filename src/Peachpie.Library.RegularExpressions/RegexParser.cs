@@ -1615,16 +1615,16 @@ namespace Peachpie.Library.RegularExpressions
                 int i = 0;
 
                 var ch = MoveRightGetChar();
-                if (ch == '{')  // {FFFF}
+                if (ch == '{')  // {FFFFFF}
                 {
                     if (!UseOptionUtf8())
                     {
                         // TODO: this should only be allowed with this option
                     }
 
-                    // scan 1 - 4 hex digits
+                    // scan 1 - 6 hex digits
                     int c = 0;
-                    for (; c < 4 && CharsRight() != 0; c++)
+                    for (; c < 6 && CharsRight() != 0; c++)
                     {
                         ch = MoveRightGetChar();
                         d = HexDigit(ch);

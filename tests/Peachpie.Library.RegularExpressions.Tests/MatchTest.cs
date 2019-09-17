@@ -30,6 +30,8 @@ namespace Peachpie.Library.RegularExpressions.Tests
         public void Test2()
         {
             Assert.True(match("/\\q\\_\\y/", "q_y").Success);
+
+            match(@"/^[\x{9}\x{A}\x{D}\x{20}-\x{7E}\x{A0}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]*$/Du", "");
         }
 
         [Fact]
