@@ -1991,9 +1991,7 @@ namespace Peachpie.Library.RegularExpressions
                     return RegexOptions.PCRE_EXTRA;
 
                 default:
-                    //throw new RegexParseException(offset, string.Format(Resource.modifier_unknown, option.ToString()));
-                    Trace.WriteLine(string.Format(Resource.modifier_unknown, option.ToString()));
-                    return 0;
+                    throw new RegexParseException(offset, string.Format(Resource.modifier_unknown, option.ToString()));
             }
         }
 

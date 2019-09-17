@@ -127,7 +127,7 @@
     <value>Ignoring unsupported pattern modifier '{0}' in perl regular expression</value>
   </data>
   <data name="modifier_unknown" xml:space="preserve">
-    <value>Ignoring unknown pattern modifier '{0}' in perl regular expression</value>
+    <value>Unknown modifier '{0}'</value>
   </data>
   <data name="preg_match_pattern_set_order" xml:space="preserve">
     <value>PREG_PATTERN_ORDER and PREG_SET_ORDER flags are mutually exclusive</value>

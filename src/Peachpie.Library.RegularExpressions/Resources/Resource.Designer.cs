@@ -286,7 +286,7 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Ignoring unknown pattern modifier &apos;{0}&apos; in perl regular expression.
+        ///   Looks up a localized string similar to Unknown modifier &apos;{0}&apos;.
         /// </summary>
         internal static string modifier_unknown {
             get {
