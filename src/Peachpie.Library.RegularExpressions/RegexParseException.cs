@@ -13,23 +13,26 @@ namespace Peachpie.Library.RegularExpressions
         /// <summary>
         /// The offset in the supplied pattern.
         /// </summary>
-        public int Offset { get; } = -1;
+        public int? Offset { get; }
 
-        public RegexParseException(int offset, string message)
-            : base(message)
+        public RegexParseException(int offset, string message, Exception inner)
+            : base(message, inner)
         {
             Offset = offset;
         }
 
-        public RegexParseException() : base()
+        public RegexParseException(int offset, string message)
+            : this(offset, message, null)
         {
         }
 
-        public RegexParseException(string message) : base(message)
+        public RegexParseException(string message)
+            : this(message, null)
         {
         }
 
-        public RegexParseException(string message, Exception inner) : base(message, inner)
+        public RegexParseException(string message, Exception inner)
+            : base(message, inner)
         {
         }
     }

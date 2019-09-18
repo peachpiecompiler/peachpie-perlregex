@@ -135,7 +135,7 @@ namespace Peachpie.Library.RegularExpressions
                 }
             }
 
-            throw new RegexParseException(0, Resource.regular_expression_empty);
+            throw new RegexParseException(Resource.regular_expression_empty);
         }
 
         /// <summary>
