@@ -125,6 +125,8 @@ namespace Peachpie.Library.RegularExpressions
         private Regex(string pattern, RegexOptions options, TimeSpan matchTimeout, bool useCache)
         {
             // validate parameters:
+            if (pattern == null)
+                throw new ArgumentNullException(nameof(pattern));
             if (options < RegexOptions.None || (((int)options) >> MaxOptionShift) != 0)
                 throw new ArgumentOutOfRangeException(nameof(options));
             if ((options & RegexOptions.ECMAScript) != 0
@@ -140,7 +142,7 @@ namespace Peachpie.Library.RegularExpressions
 
             ValidateMatchTimeout(matchTimeout);
 
-            this.pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
+            this.pattern = pattern;
             this.roptions = options;
 
             // Try to look up this regex in the cache.  We do this regardless of whether useCache is true since there's
