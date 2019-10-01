@@ -708,7 +708,7 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 if (inRange)
                                     throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
-                                cc.AddDigit(UseOptionE(), ch == 'D', _pattern);
+                                cc.AddDigit(UseOptionE(), ch == 'D', _pattern, _currentPos);
                             }
                             continue;
 
@@ -739,7 +739,7 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 if (inRange)
                                     throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
-                                cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _pattern);
+                                cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _pattern, _currentPos);
                             }
                             else
                                 ParseProperty();
@@ -1255,7 +1255,7 @@ namespace Peachpie.Library.RegularExpressions
                 case 'P':
                     MoveRight();
                     cc = new RegexCharClass();
-                    cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), UseOptionI(), _pattern);
+                    cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), UseOptionI(), _pattern, _currentPos);
                     if (UseOptionI())
                         cc.AddLowercase(_culture);
                     return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
@@ -1263,7 +1263,7 @@ namespace Peachpie.Library.RegularExpressions
                 case 'R':   // new line separator, Unicode category `Zl`
                     MoveRight();
                     cc = new RegexCharClass();
-                    cc.AddCategoryFromName("Zl", false, false, _pattern);
+                    cc.AddCategoryFromName("Zl", false, false, _pattern, _currentPos);
                     return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
 
                 default:
