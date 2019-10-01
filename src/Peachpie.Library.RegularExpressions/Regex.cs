@@ -656,12 +656,34 @@ namespace Peachpie.Library.RegularExpressions
         /// <paramref name="replacement"/> pattern, starting at the first character in the
         /// input string.
         /// </summary>
+        public string Replace(string input, string replacement, int count)
+        {
+            long replacements = 0;
+            return Replace(input, replacement, count, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the
+        /// <paramref name="replacement"/> pattern, starting at the first character in the
+        /// input string.
+        /// </summary>
         public string Replace(string input, string replacement, int count, ref long replacements)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
             return Replace(input, replacement, count, UseOptionR() ? input.Length : 0, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the
+        /// <paramref name="replacement"/> pattern, starting at the character position
+        /// <paramref name="startat"/>.
+        /// </summary>
+        public string Replace(string input, string replacement, int count, int startat)
+        {
+            long replacements = 0;
+            return Replace(input, replacement, count, startat, ref replacements);
         }
 
         /// <summary>
@@ -730,12 +752,33 @@ namespace Peachpie.Library.RegularExpressions
         /// Replaces all occurrences of the previously defined pattern with the recent
         /// replacement pattern, starting at the first character position.
         /// </summary>
+        public string Replace(string input, MatchEvaluator evaluator, int count)
+        {
+            long replacements = 0;
+            return Replace(input, evaluator, count, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the recent
+        /// replacement pattern, starting at the first character position.
+        /// </summary>
         public string Replace(string input, MatchEvaluator evaluator, int count, ref long replacements)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
             return Replace(input, evaluator, count, UseOptionR() ? input.Length : 0, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the recent
+        /// replacement pattern, starting at the character position
+        /// <paramref name="startat"/>.
+        /// </summary>
+        public string Replace(string input, MatchEvaluator evaluator, int count, int startat)
+        {
+            long replacements = 0;
+            return Replace(input, evaluator, count, startat, ref replacements);
         }
 
         /// <summary>
