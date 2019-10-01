@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Peachpie.Library.RegularExpressions.Tests
 {
-    public class MatchTest
+    public class PcreTests
     {
         static Match match(string pattern, string subject, int startat = 0)
         {
