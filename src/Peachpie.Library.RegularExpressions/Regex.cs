@@ -88,7 +88,7 @@ namespace Peachpie.Library.RegularExpressions
 
 
         internal ExclusiveReference _runnerref;             // cached runner
-        internal SharedReference _replref;                  // cached parsed replacement pattern
+        internal WeakReference<RegexReplacement> _replref;  // cached parsed replacement pattern
         internal RegexCode _code;                           // if interpreted, this is the code for RegexInterpreter
         internal bool _refsInitialized = false;
 
@@ -701,14 +701,8 @@ namespace Peachpie.Library.RegularExpressions
             if (replacement == null)
                 throw new ArgumentNullException(nameof(replacement));
 
-            // a little code to grab a cached parsed replacement object
-            RegexReplacement repl = (RegexReplacement)_replref.Get();
-
-            if (repl == null || !repl.Pattern.Equals(replacement))
-            {
-                repl = RegexParser.ParseReplacement(replacement, caps, capsize, capnames, roptions);
-                _replref.Cache(repl);
-            }
+            // Gets the weakly cached replacement helper or creates one if there isn't one already.
+            RegexReplacement repl = RegexReplacement.GetOrCreate(_replref, replacement, caps, capsize, capnames, roptions);
 
             return repl.Replace(this, input, count, startat, ref replacements);
         }
@@ -861,7 +855,7 @@ namespace Peachpie.Library.RegularExpressions
 
             _refsInitialized = true;
             _runnerref = new ExclusiveReference();
-            _replref = new SharedReference();
+            _replref = new WeakReference<RegexReplacement>(null);
         }
 
         /*
@@ -1066,10 +1060,10 @@ namespace Peachpie.Library.RegularExpressions
         internal string[] _capslist;
         internal int _capsize;
         internal ExclusiveReference _runnerref;
-        internal SharedReference _replref;
+        internal WeakReference<RegexReplacement> _replref;
         internal uint _usedstamp;
 
-        internal CachedCodeEntry(Dictionary<string, int> capnames, string[] capslist, RegexCode code, Dictionary<int, int> caps, int capsize, ExclusiveReference runner, SharedReference repl)
+        internal CachedCodeEntry(Dictionary<string, int> capnames, string[] capslist, RegexCode code, Dictionary<int, int> caps, int capsize, ExclusiveReference runner, WeakReference<RegexReplacement> repl)
         {
             _capnames = capnames;
             _capslist = capslist;

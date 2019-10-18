@@ -286,6 +286,20 @@ namespace System.Text
             }
         }
 
+        public void AppendReversed(ReadOnlySpan<char> value)
+        {
+            Span<char> span = AppendSpan(value.Length);
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = value[value.Length - i - 1];
+            }
+        }
+
+        public void Reverse()
+        {
+            _chars.Slice(0, _pos).Reverse();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {

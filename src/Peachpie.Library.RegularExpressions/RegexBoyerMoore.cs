@@ -55,10 +55,19 @@ namespace Peachpie.Library.RegularExpressions
             // consistent.
             if (caseInsensitive)
             {
+                // FIXME
+
                 var sb = new StringBuilder(pattern.Length);
                 for (int i = 0; i < pattern.Length; i++)
                     sb.Append(culture.TextInfo.ToLower(pattern[i]));
                 pattern = sb.ToString();
+
+                //pattern = string.Create(pattern.Length, (pattern, culture), (span, state) =>
+                //{
+                //    TextInfo textInfo = state.culture.TextInfo;
+                //    for (int i = 0; i < state.pattern.Length; i++)
+                //        span[i] = textInfo.ToLower(state.pattern[i]);
+                //});
             }
 
             _pattern = pattern;

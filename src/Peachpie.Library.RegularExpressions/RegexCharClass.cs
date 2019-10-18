@@ -685,26 +685,25 @@ namespace Peachpie.Library.RegularExpressions
         {
             // FIXME
 
-            Span<char> buffer = stackalloc char[set.Length + category.Length + 3];
-            var vsb = new ValueStringBuilder(buffer);
+            var sb = new StringBuilder(set.Length + category.Length + 3);
 
             if (set.Length >= 2 && set[0] == '\0' && set[1] == '\0')
             {
-                vsb.Append((char)0x1);
-                vsb.Append((char)(set.Length - 2));
-                vsb.Append((char)category.Length);
-                vsb.Append(set.Substring(2));
+                sb.Append((char)0x1);
+                sb.Append((char)(set.Length - 2));
+                sb.Append((char)category.Length);
+                sb.Append(set.Substring(2));
             }
             else
             {
-                vsb.Append((char)0x0);
-                vsb.Append((char)set.Length);
-                vsb.Append((char)category.Length);
-                vsb.Append(set);
+                sb.Append((char)0x0);
+                sb.Append((char)set.Length);
+                sb.Append((char)category.Length);
+                sb.Append(set);
             }
-            vsb.Append(category);
+            sb.Append(category);
 
-            return vsb.ToString();
+            return sb.ToString();
 
             //bool startsWithNulls = set.Length >= 2 && set[0] == '\0' && set[1] == '\0';
             //int strLength = set.Length + category.Length + 3;
@@ -984,20 +983,19 @@ namespace Peachpie.Library.RegularExpressions
 
         private static string NegateCategory(string category)
         {
+            // FIXME
+
             if (category == null)
                 return null;
 
-            // FIXME
-
-            Span<char> buffer = stackalloc char[category.Length];
-            var vsb = new ValueStringBuilder(buffer);
+            var sb = new StringBuilder(category.Length);
 
             for (int i = 0; i < category.Length; i++)
             {
                 short ch = (short)category[i];
-                vsb.Append((char)-ch);
+                sb.Append((char)-ch);
             }
-            return vsb.ToString();
+            return sb.ToString();
 
             //return string.Create(category.Length, category, (span, _category) =>
             //{
