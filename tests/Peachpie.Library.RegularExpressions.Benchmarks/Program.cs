@@ -11,7 +11,7 @@ using BenchmarkDotNet.Environments;
 
 namespace Peachpie.Library.RegularExpressions.Benchmarks
 {
-    [CoreJob]
+    [SimpleJob(RuntimeMoniker.NetCoreApp30)]
     [MemoryDiagnoser]
     public class ReduxBenchmarkQuick
     {
@@ -39,7 +39,7 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
             public Config()
             {
                 Add(Job.Default
-                    .With(Runtime.Core)
+                    .With(CoreRuntime.Core30)
                     .WithLaunchCount(1)
                     .WithWarmupCount(1)
                     .WithInvocationCount(1)
