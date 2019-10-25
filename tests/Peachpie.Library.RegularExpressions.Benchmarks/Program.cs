@@ -8,11 +8,13 @@ using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Diagnostics.Windows.Configs;
 
 namespace Peachpie.Library.RegularExpressions.Benchmarks
 {
     [SimpleJob(RuntimeMoniker.NetCoreApp30)]
     [MemoryDiagnoser]
+    [EtwProfiler]
     public class ReduxBenchmarkQuick
     {
         private string _sequences;
@@ -32,6 +34,7 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
 
     [Config(typeof(Config))]
     [MemoryDiagnoser]
+    [EtwProfiler]
     public class ReduxBenchmarkSlow
     {
         private class Config : ManualConfig
