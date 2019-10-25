@@ -16,7 +16,6 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
 {
     [SimpleJob(RuntimeMoniker.NetCoreApp30)]
     [MemoryDiagnoser]
-    [EtwProfiler]
     public class ReduxBenchmarkQuick
     {
         private class Config : ManualConfig
