@@ -587,7 +587,7 @@ namespace Peachpie.Library.RegularExpressions
                         {
                             TransferCapture(Operand(0), Operand(1), StackPeek(), Textpos());
                         }
-                        else if (_callStack?.captureNum == Operand(0))
+                        else if (_callStack != null && _callStack.captureNum == Operand(0))
                         {
                             // Successful return from a subroutine
                             int returnPos = _callStack.returnPos;
