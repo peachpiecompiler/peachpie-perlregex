@@ -45,7 +45,7 @@ namespace Peachpie.Library.RegularExpressions
          * This is the one of the only two functions that should be called from outside.
          * It takes a RegexTree and computes the set of chars that can start it.
          */
-        internal static RegexPrefix FirstChars(RegexTree t)
+        internal static RegexPrefix? FirstChars(RegexTree t)
         {
             RegexFCD s = new RegexFCD();
             RegexFC fc = s.RegexFCFromRegexTree(t);
@@ -610,10 +610,10 @@ namespace Peachpie.Library.RegularExpressions
         }
     }
 
-    internal sealed class RegexPrefix
+    internal readonly struct RegexPrefix
     {
-        internal string _prefix;
-        internal bool _caseInsensitive;
+        internal readonly string _prefix;
+        internal readonly bool _caseInsensitive;
 
         internal static RegexPrefix _empty = new RegexPrefix(string.Empty, false);
 

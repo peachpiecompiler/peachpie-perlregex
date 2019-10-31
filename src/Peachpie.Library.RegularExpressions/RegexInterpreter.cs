@@ -405,9 +405,6 @@ namespace Peachpie.Library.RegularExpressions
 
         protected override bool FindFirstChar()
         {
-            int i;
-            string set;
-
             if (0 != (_code._anchors & (RegexFCD.Beginning | RegexFCD.Start | RegexFCD.EndZ | RegexFCD.End)))
             {
                 if (!_code._rightToLeft)
@@ -468,14 +465,14 @@ namespace Peachpie.Library.RegularExpressions
             }
 
             _rightToLeft = _code._rightToLeft;
-            _caseInsensitive = _code._fcPrefix.CaseInsensitive;
-            set = _code._fcPrefix.Prefix;
+            _caseInsensitive = _code._fcPrefix.GetValueOrDefault().CaseInsensitive;
+            string set = _code._fcPrefix.GetValueOrDefault().Prefix;
 
             if (RegexCharClass.IsSingleton(set))
             {
                 char ch = RegexCharClass.SingletonChar(set);
 
-                for (i = Forwardchars(); i > 0; i--)
+                for (int i = Forwardchars(); i > 0; i--)
                 {
                     if (ch == Forwardcharnext())
                     {
@@ -486,7 +483,7 @@ namespace Peachpie.Library.RegularExpressions
             }
             else
             {
-                for (i = Forwardchars(); i > 0; i--)
+                for (int i = Forwardchars(); i > 0; i--)
                 {
                     if (RegexCharClass.CharInClass(Forwardcharnext(), set))
                     {

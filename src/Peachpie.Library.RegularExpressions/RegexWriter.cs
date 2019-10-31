@@ -129,14 +129,14 @@ namespace Peachpie.Library.RegularExpressions
             writer.PatchJump(0, writer._emitted.Length);
             writer.Emit(RegexCode.Stop);
 
-            RegexPrefix fcPrefix = RegexFCD.FirstChars(tree);
+            RegexPrefix? fcPrefix = RegexFCD.FirstChars(tree);
             RegexPrefix prefix = RegexFCD.Prefix(tree);
             bool rtl = ((tree._options & RegexOptions.RightToLeft) != 0);
 
             CultureInfo culture = (tree._options & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture;
             RegexBoyerMoore bmPrefix;
 
-            if (prefix != null && prefix.Prefix.Length > 0)
+            if (prefix.Prefix.Length > 0)
                 bmPrefix = new RegexBoyerMoore(prefix.Prefix, prefix.CaseInsensitive, rtl, culture);
             else
                 bmPrefix = null;
