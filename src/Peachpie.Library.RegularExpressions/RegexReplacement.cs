@@ -50,11 +50,11 @@ namespace Peachpie.Library.RegularExpressions
                 switch (child.Type())
                 {
                     case RegexNode.Multi:
-                        vsb.Append(child._str);
+                        vsb.Append(child.Str);
                         break;
 
                     case RegexNode.One:
-                        vsb.Append(child._ch);
+                        vsb.Append(child.Ch);
                         break;
 
                     case RegexNode.Ref:
@@ -64,7 +64,7 @@ namespace Peachpie.Library.RegularExpressions
                             strings.Add(vsb.ToString());
                             vsb.Length = 0;
                         }
-                        int slot = child._m;
+                        int slot = child.M;
 
                         if (_caps != null && slot >= 0)
                             slot = (int)_caps[slot];

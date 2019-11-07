@@ -158,8 +158,8 @@ namespace Peachpie.Library.RegularExpressions
                 var tree = RegexParser.Parse(pattern, roptions);
 
                 // Extract the relevant information
-                capnames = tree._capnames;
-                capslist = tree._capslist;
+                capnames = tree.CapNames;
+                capslist = tree.CapsList;
                 _code = RegexWriter.Write(tree);
                 caps = _code._caps;
                 capsize = _code._capsize;

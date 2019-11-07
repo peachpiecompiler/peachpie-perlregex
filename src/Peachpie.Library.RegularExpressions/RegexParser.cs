@@ -2472,9 +2472,9 @@ namespace Peachpie.Library.RegularExpressions
          */
         internal void PushGroup()
         {
-            _group._next = _stack;
-            _alternation._next = _group;
-            _concatenation._next = _alternation;
+            _group.Next = _stack;
+            _alternation.Next = _group;
+            _concatenation.Next = _alternation;
             _stack = _concatenation;
         }
 
@@ -2484,9 +2484,9 @@ namespace Peachpie.Library.RegularExpressions
         internal void PopGroup()
         {
             _concatenation = _stack;
-            _alternation = _concatenation._next;
-            _group = _alternation._next;
-            _stack = _group._next;
+            _alternation = _concatenation.Next;
+            _group = _alternation.Next;
+            _stack = _group.Next;
 
             // The first () inside a Testgroup group goes directly to the group
             if (_group.Type() == RegexNode.Testgroup && _group.ChildCount() == 0)
