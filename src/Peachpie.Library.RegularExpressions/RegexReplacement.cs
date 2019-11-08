@@ -99,7 +99,7 @@ namespace Peachpie.Library.RegularExpressions
 
             if (!replRef.TryGetTarget(out repl) || !repl.Pattern.Equals(replacement))
             {
-                repl = RegexParser.ParseReplacement(replacement, caps, capsize, capnames, roptions);
+                repl = RegexParser.ParseReplacement(replacement, roptions, caps, capsize, capnames);
                 replRef.SetTarget(repl);
             }
 
