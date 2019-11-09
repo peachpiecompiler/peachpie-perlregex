@@ -516,7 +516,7 @@ namespace Peachpie.Library.RegularExpressions
                 }
 #endif
 
-                CheckTimeout();
+                //CheckTimeout();
 
                 switch (Operator())
                 {

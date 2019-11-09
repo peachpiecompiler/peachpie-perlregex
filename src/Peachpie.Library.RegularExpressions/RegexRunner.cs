@@ -130,7 +130,7 @@ namespace Peachpie.Library.RegularExpressions
                 runtextpos += bump;
             }
 
-            StartTimeoutWatch();
+            //StartTimeoutWatch();
 
             for (; ;)
             {
@@ -144,7 +144,7 @@ namespace Peachpie.Library.RegularExpressions
 #endif
                 if (FindFirstChar())
                 {
-                    CheckTimeout();
+                    //CheckTimeout();
 
                     if (!initted)
                     {
@@ -191,39 +191,40 @@ namespace Peachpie.Library.RegularExpressions
             // We never get here
         }
 
-        private void StartTimeoutWatch()
-        {
-            if (_ignoreTimeout)
-                return;
+        //private void StartTimeoutWatch()
+        //{
+        //    if (_ignoreTimeout)
+        //        return;
 
-            _timeoutChecksToSkip = TimeoutCheckFrequency;
+        //    _timeoutChecksToSkip = TimeoutCheckFrequency;
 
-            //// We are using Environment.TickCount and not Timewatch for performance reasons.
-            //// Environment.TickCount is an int that cycles. We intentionally let timeoutOccursAt
-            //// overflow it will still stay ahead of Environment.TickCount for comparisons made
-            //// in DoCheckTimeout():
-            //unchecked
-            //{
-            //    _timeoutOccursAt = Environment.TickCount + _timeout;
-            //}
-        }
+        //    // We are using Environment.TickCount and not Timewatch for performance reasons.
+        //    // Environment.TickCount is an int that cycles. We intentionally let timeoutOccursAt
+        //    // overflow it will still stay ahead of Environment.TickCount for comparisons made
+        //    // in DoCheckTimeout():
+        //    unchecked
+        //    {
+        //        _timeoutOccursAt = Environment.TickCount + _timeout;
+        //    }
+        //}
 
-        protected void CheckTimeout()
-        {
-            if (_ignoreTimeout)
-                return;
+        //protected void CheckTimeout()
+        //{
+        //    if (_ignoreTimeout)
+        //        return;
 
-            if (--_timeoutChecksToSkip != 0)
-                return;
+        //    DoCheckTimeout();
+        //}
 
-            _timeoutChecksToSkip = TimeoutCheckFrequency;
-            DoCheckTimeout();
-        }
+//        private void DoCheckTimeout()
+//        {
+//            if (--_timeoutChecksToSkip != 0)
+//                return;
 
-        private void DoCheckTimeout()
-        {
-            // Note that both, Environment.TickCount and timeoutOccursAt are ints and can overflow and become negative.
-            // See the comment in StartTimeoutWatch().
+//            _timeoutChecksToSkip = TimeoutCheckFrequency;
+
+//            // Note that both, Environment.TickCount and timeoutOccursAt are ints and can overflow and become negative.
+//            // See the comment in StartTimeoutWatch().
 
 //            int currentMillis = Environment.TickCount;
 
@@ -247,7 +248,7 @@ namespace Peachpie.Library.RegularExpressions
 //#endif
 
 //            throw new RegexMatchTimeoutException(runtext, runregex.pattern, TimeSpan.FromMilliseconds(_timeout));
-        }
+//        }
 
         /// <summary>
         /// The responsibility of Go() is to run the regular expression at
