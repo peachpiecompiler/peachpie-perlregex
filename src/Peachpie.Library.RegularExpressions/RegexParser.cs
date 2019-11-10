@@ -34,7 +34,7 @@ namespace Peachpie.Library.RegularExpressions
         private RegexNode _concatenation;
         private RegexNode _unit;
 
-        private readonly string _pattern;
+        private readonly ReadOnlySpan<char> _pattern;
         private int _currentPos;
 
         /// <summary>Relative offset of the <see cref="_pattern"/> within the actual input string.</summary>
@@ -58,7 +58,7 @@ namespace Peachpie.Library.RegularExpressions
 
         private bool _ignoreNextParen; // flag to skip capturing a parentheses group
 
-        private RegexParser(string pattern, RegexOptions options, CultureInfo culture, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames, Span<RegexOptions> optionSpan)
+        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames, Span<RegexOptions> optionSpan)
         {
             Debug.Assert(pattern != null, "Pattern must be set");
             Debug.Assert(culture != null, "Culture must be set");
@@ -86,7 +86,7 @@ namespace Peachpie.Library.RegularExpressions
             _ignoreNextParen = false;
         }
 
-        private RegexParser(string pattern, RegexOptions options, CultureInfo culture, Span<RegexOptions> optionSpan)
+        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Span<RegexOptions> optionSpan)
             : this(pattern, options, culture, new Dictionary<int, int>(), default, null, optionSpan)
         {
         }
@@ -115,7 +115,7 @@ namespace Peachpie.Library.RegularExpressions
         /// <summary>
         /// Matches end and start delimiters and returns enclosed pattern.
         /// </summary>
-        private static string TrimDelimiters(string re, int end, out int offset)
+        private static ReadOnlySpan<char> TrimDelimiters(string re, int end, out int offset)
         {
             Debug.Assert(re != null);
             Debug.Assert(end <= re.Length);
@@ -149,7 +149,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (re[i] == start_delimiter)
                     {
                         offset = i + 1;
-                        return re.Substring(offset, end - offset - 1);
+                        return re.AsSpan(offset, end - offset - 1);
                     }
                     else
                     {
@@ -209,7 +209,7 @@ namespace Peachpie.Library.RegularExpressions
         {
             CultureInfo culture = (options & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture;
             Span<RegexOptions> optionSpan = stackalloc RegexOptions[OptionStackDefaultSize];
-            var parser = new RegexParser(pattern, options, culture, caps, capsize, capnames, optionSpan);
+            var parser = new RegexParser(pattern.AsSpan(), options, culture, caps, capsize, capnames, optionSpan);
 
             RegexNode root = parser.ScanReplacement();
             var regexReplacement = new RegexReplacement(pattern, root, caps);
@@ -295,14 +295,14 @@ namespace Peachpie.Library.RegularExpressions
             {
                 if (input[i] == '\\')
                 {
-                    return UnescapeImpl(input, i);
+                    return UnescapeImpl(input.AsSpan(), i);
                 }
             }
 
             return input;
         }
 
-        private static string UnescapeImpl(string input, int i)
+        private static string UnescapeImpl(ReadOnlySpan<char> input, int i)
         {
             Span<RegexOptions> optionSpan = stackalloc RegexOptions[OptionStackDefaultSize];
             var parser = new RegexParser(input, RegexOptions.None, CultureInfo.InvariantCulture, optionSpan);
@@ -314,7 +314,7 @@ namespace Peachpie.Library.RegularExpressions
                 new ValueStringBuilder(buffer) :
                 new ValueStringBuilder(input.Length);
 
-            vsb.Append(input.AsSpan(0, i));
+            vsb.Append(input.Slice(0, i));
             do
             {
                 i++;
@@ -325,7 +325,7 @@ namespace Peachpie.Library.RegularExpressions
                 int lastpos = i;
                 while (i < input.Length && input[i] != '\\')
                     i++;
-                vsb.Append(input.AsSpan(lastpos, i - lastpos));
+                vsb.Append(input.Slice(lastpos, i - lastpos));
             } while (i < input.Length);
 
             parser.Dispose();
@@ -723,7 +723,7 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 if (inRange)
                                     throw MakeException(string.Format(SR.BadClassInCharRange, ch));
-                                cc.AddDigit(UseOptionE(), ch == 'D', _pattern, _currentPos);
+                                cc.AddDigit(UseOptionE(), ch == 'D', _currentPos + _offsetPos);
                             }
                             continue;
 
@@ -754,7 +754,7 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 if (inRange)
                                     throw MakeException(string.Format(SR.BadClassInCharRange, ch));
-                                cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _pattern, _currentPos);
+                                cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _currentPos + _offsetPos);
                             }
                             else
                                 ParseProperty();
@@ -1284,7 +1284,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (scanOnly)
                         return null;
                     var cc = new RegexCharClass();
-                    cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), UseOptionI(), _pattern, _currentPos);
+                    cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), UseOptionI(), _currentPos + _offsetPos);
                     if (UseOptionI())
                         cc.AddLowercase(_culture);
                     return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
@@ -1294,7 +1294,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (scanOnly)
                         return null;
                     cc = new RegexCharClass();
-                    cc.AddCategoryFromName("Zl", false, false, _pattern, _currentPos);
+                    cc.AddCategoryFromName("Zl", false, false, _currentPos + _offsetPos);
                     return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
 
                 default:
@@ -1590,7 +1590,7 @@ namespace Peachpie.Library.RegularExpressions
                 }
             }
 
-            return _pattern.Substring(startpos, Textpos() - startpos);
+            return _pattern.Slice(startpos, Textpos() - startpos).ToString();
         }
 
 
@@ -1893,7 +1893,7 @@ namespace Peachpie.Library.RegularExpressions
                     break;
                 }
             }
-            string capname = _pattern.Substring(startpos, Textpos() - startpos);
+            string capname = _pattern.Slice(startpos, Textpos() - startpos).ToString();
 
             if (CharsRight() == 0 || RightCharMoveRight() != '}')
                 throw MakeException(SR.IncompleteSlashP);
@@ -2449,7 +2449,7 @@ namespace Peachpie.Library.RegularExpressions
                 }
                 else
                 {
-                     str = _pattern.Substring(pos, cch);
+                     str = _pattern.Slice(pos, cch).ToString();
                 }
 
                 node = new RegexNode(RegexNode.Multi, _options, str);

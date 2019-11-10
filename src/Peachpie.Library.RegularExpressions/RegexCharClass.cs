@@ -525,7 +525,7 @@ namespace Peachpie.Library.RegularExpressions
             }
         }
 
-        public void AddCategoryFromName(string categoryName, bool invert, bool caseInsensitive, string pattern, int currentPos)
+        public void AddCategoryFromName(string categoryName, bool invert, bool caseInsensitive, int currentPos)
         {
             if (s_definedCategories.TryGetValue(categoryName, out string category) && !categoryName.Equals(InternalRegexIgnoreCase))
             {
@@ -542,7 +542,7 @@ namespace Peachpie.Library.RegularExpressions
                 _categories.Append(category);
             }
             else
-                AddSet(SetFromProperty(categoryName, invert, pattern, currentPos));
+                AddSet(SetFromProperty(categoryName, invert, currentPos));
         }
 
         private void AddCategory(string category)
@@ -668,7 +668,7 @@ namespace Peachpie.Library.RegularExpressions
             }
         }
 
-        public void AddDigit(bool ecma, bool negate, string pattern, int currentPos)
+        public void AddDigit(bool ecma, bool negate, int currentPos)
         {
             if (ecma)
             {
@@ -678,7 +678,7 @@ namespace Peachpie.Library.RegularExpressions
                     AddSet(ECMADigitSet);
             }
             else
-                AddCategoryFromName("Nd", negate, false, pattern, currentPos);
+                AddCategoryFromName("Nd", negate, false, currentPos);
         }
 
         public static string ConvertOldStringsToClass(string set, string category)
@@ -1161,7 +1161,7 @@ namespace Peachpie.Library.RegularExpressions
             }
         }
 
-        private static string SetFromProperty(string capname, bool invert, string pattern, int currentPos)
+        private static string SetFromProperty(string capname, bool invert, int currentPos)
         {
             int min = 0;
             int max = s_propTable.Length;
@@ -1192,10 +1192,7 @@ namespace Peachpie.Library.RegularExpressions
                 }
             }
 
-            // FIXME
-            throw new ArgumentException(string.Format(SR.UnknownProperty, capname));
-            //throw new RegexParseException(RegexParseError.UnknownUnicodeProperty, currentPos,
-            //    SR.Format(SR.MakeException, pattern, currentPos, SR.Format(SR.UnknownProperty, capname)));
+            throw new RegexParseException(currentPos, string.Format(SR.UnknownProperty, capname));
         }
 
 #if DEBUG
