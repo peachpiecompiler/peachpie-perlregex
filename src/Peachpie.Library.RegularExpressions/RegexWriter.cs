@@ -12,9 +12,7 @@
 // sequences of codes.
 //
 
-using Peachpie.Library.RegularExpressions.Resources;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -29,8 +27,8 @@ namespace Peachpie.Library.RegularExpressions
         private const int EmittedSize = 56;
         private const int IntStackSize = 32;
 
-        private ResizableValueListBuilder<int> _emitted;
-        private ResizableValueListBuilder<int> _intStack;
+        private ValueListBuilder<int> _emitted;
+        private ValueListBuilder<int> _intStack;
         private readonly Dictionary<string, int> _stringHash;
         private readonly List<string> _stringTable;
         private Dictionary<int, int> _caps;
@@ -41,8 +39,8 @@ namespace Peachpie.Library.RegularExpressions
 
         private RegexWriter(Span<int> emittedSpan, Span<int> intStackSpan)
         {
-            _emitted = new ResizableValueListBuilder<int>(emittedSpan);
-            _intStack = new ResizableValueListBuilder<int>(intStackSpan);
+            _emitted = new ValueListBuilder<int>(emittedSpan);
+            _intStack = new ValueListBuilder<int>(intStackSpan);
             _stringHash = new Dictionary<string, int>();
             _stringTable = new List<string>();
             _caps = null;
@@ -56,17 +54,33 @@ namespace Peachpie.Library.RegularExpressions
         /// This is the only function that should be called from outside.
         /// It takes a RegexTree and creates a corresponding RegexCode.
         /// </summary>
-        internal static RegexCode Write(RegexTree t)
+        public static RegexCode Write(RegexTree tree)
         {
-            RegexCode retval = RegexCodeFromRegexTree(t);
+            Span<int> emittedSpan = stackalloc int[EmittedSize];
+            Span<int> intStackSpan = stackalloc int[IntStackSize];
+
+            var writer = new RegexWriter(emittedSpan, intStackSpan);
+            RegexCode code = writer.RegexCodeFromRegexTree(tree);
+            writer.Dispose();
+
 #if DEBUG
-            if (t.Debug)
+            if (tree.Debug)
             {
-                t.Dump();
-                retval.Dump();
+                tree.Dump();
+                code.Dump();
             }
 #endif
-            return retval;
+
+            return code;
+        }
+
+        /// <summary>
+        /// Return rented buffers.
+        /// </summary>
+        public void Dispose()
+        {
+            _emitted.Dispose();
+            _intStack.Dispose();
         }
 
         /// <summary>
@@ -74,60 +88,57 @@ namespace Peachpie.Library.RegularExpressions
         /// through the tree and calls EmitFragment to emits code before
         /// and after each child of an interior node, and at each leaf.
         /// </summary>
-        private static RegexCode RegexCodeFromRegexTree(RegexTree tree)
+        public RegexCode RegexCodeFromRegexTree(RegexTree tree)
         {
-            Span<int> emittedSpan = stackalloc int[EmittedSize];
-            Span<int> intStackSpan = stackalloc int[IntStackSize];
-            RegexWriter writer = new RegexWriter(emittedSpan, intStackSpan);
-
             // construct sparse capnum mapping if some numbers are unused
             int capsize;
             if (tree.CapNumList == null || tree.CapTop == tree.CapNumList.Length)
             {
                 capsize = tree.CapTop;
-                writer._caps = null;
+                _caps = null;
             }
             else
             {
                 capsize = tree.CapNumList.Length;
-                writer._caps = tree.Caps;
+                _caps = tree.Caps;
                 for (int i = 0; i < tree.CapNumList.Length; i++)
-                    writer._caps[tree.CapNumList[i]] = i;
+                    _caps[tree.CapNumList[i]] = i;
             }
 
-            writer._capPositions = new int[capsize];
+            _capPositions = new int[capsize];
             RegexNode curNode = tree.Root;
             int curChild = 0;
 
-            writer.Emit(RegexCode.Lazybranch, 0);
+            Emit(RegexCode.Lazybranch, 0);
 
-            for (; ; )
+            while (true)
             {
                 if (curNode.Children == null)
                 {
-                    writer.EmitFragment(curNode.NType, curNode, 0);
+                    EmitFragment(curNode.NType, curNode, 0);
                 }
                 else if (curChild < curNode.Children.Count)
                 {
-                    writer.EmitFragment(curNode.NType | BeforeChild, curNode, curChild);
+                    EmitFragment(curNode.NType | BeforeChild, curNode, curChild);
 
                     curNode = curNode.Children[curChild];
-                    writer._intStack.Append(curChild);
+                    _intStack.Append(curChild);
                     curChild = 0;
                     continue;
                 }
 
-                if (writer._intStack.Length == 0)
+                if (_intStack.Length == 0)
                     break;
 
-                curChild = writer._intStack.Pop();
+                curChild = _intStack.Pop();
                 curNode = curNode.Next;
-                writer.EmitFragment(curNode.NType | AfterChild, curNode, curChild);
+
+                EmitFragment(curNode.NType | AfterChild, curNode, curChild);
                 curChild++;
             }
 
-            writer.PatchJump(0, writer._emitted.Length);
-            writer.Emit(RegexCode.Stop);
+            PatchJump(0, _emitted.Length);
+            Emit(RegexCode.Stop);
 
             RegexPrefix? fcPrefix = RegexFCD.FirstChars(tree);
             RegexPrefix prefix = RegexFCD.Prefix(tree);
@@ -142,13 +153,9 @@ namespace Peachpie.Library.RegularExpressions
                 bmPrefix = null;
 
             int anchors = RegexFCD.Anchors(tree);
-            int[] emitted = writer._emitted.AsReadOnlySpan().ToArray();
+            int[] emitted = _emitted.AsSpan().ToArray();
 
-            // Cleaning up and returning the borrowed arrays
-            writer._emitted.Dispose();
-            writer._intStack.Dispose();
-
-            return new RegexCode(emitted, writer._stringTable, writer._trackCount, writer._caps, capsize, bmPrefix, fcPrefix, anchors, rtl, writer._resetMatchStartFound, writer._capPositions);
+            return new RegexCode(emitted, _stringTable, _trackCount, _caps, capsize, bmPrefix, fcPrefix, anchors, rtl, _resetMatchStartFound, _capPositions);
         }
 
         /// <summary>
