@@ -101,7 +101,7 @@ namespace Peachpie.Library.RegularExpressions
         internal readonly int _trackcount;                  // how many instructions use backtracking
         internal readonly Dictionary<int, int> _caps;                  // mapping of user group numbers -> impl group slots
         internal readonly int _capsize;                     // number of impl group slots
-        internal readonly RegexPrefix? _fcPrefix;            // the set of candidate first characters (may be null)
+        internal readonly RegexPrefix _fcPrefix;            // the set of candidate first characters (may be null)
         internal readonly RegexBoyerMoore _bmPrefix;        // the fixed prefix string as a Boyer-Moore machine (may be null)
         internal readonly int _anchors;                     // the set of zero-length start anchors (RegexFCD.Bol, etc)
         internal readonly bool _rightToLeft;                // true if right to left
@@ -110,7 +110,7 @@ namespace Peachpie.Library.RegularExpressions
 
         internal RegexCode(int[] codes, List<string> stringlist, int trackcount,
                            Dictionary<int, int> caps, int capsize,
-                           RegexBoyerMoore bmPrefix, RegexPrefix? fcPrefix,
+                           RegexBoyerMoore bmPrefix, RegexPrefix fcPrefix,
                            int anchors, bool rightToLeft, bool containsResetMatchStart,
                            int[] capPositions)
         {
@@ -367,7 +367,7 @@ namespace Peachpie.Library.RegularExpressions
             int i;
 
             Debug.WriteLine("Direction:  " + (_rightToLeft ? "right-to-left" : "left-to-right"));
-            Debug.WriteLine("Firstchars: " + (_fcPrefix == null ? "n/a" : RegexCharClass.SetDescription(_fcPrefix.GetValueOrDefault().Prefix)));
+            Debug.WriteLine("Firstchars: " + (_fcPrefix.IsDefault ? "n/a" : RegexCharClass.SetDescription(_fcPrefix.Prefix)));
             Debug.WriteLine("Prefix:     " + (_bmPrefix == null ? "n/a" : Regex.Escape(_bmPrefix.ToString())));
             Debug.WriteLine("Anchors:    " + RegexFCD.AnchorDescription(_anchors));
             Debug.WriteLine("");

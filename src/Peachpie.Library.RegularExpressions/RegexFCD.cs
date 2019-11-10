@@ -54,7 +54,7 @@ namespace Peachpie.Library.RegularExpressions
         /// This is the one of the only two functions that should be called from outside.
         /// It takes a RegexTree and computes the set of chars that can start it.
         /// </summary>
-        public static RegexPrefix? FirstChars(RegexTree t)
+        public static RegexPrefix FirstChars(RegexTree t)
         {
             // Create/rent buffers
             Span<int> intSpan = stackalloc int[StackBufferSize];
@@ -64,7 +64,7 @@ namespace Peachpie.Library.RegularExpressions
             s.Dispose();
 
             if (fc == null || fc._nullable)
-                return null;
+                return default;
 
             CultureInfo culture = ((t.Options & RegexOptions.CultureInvariant) != 0) ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture;
 

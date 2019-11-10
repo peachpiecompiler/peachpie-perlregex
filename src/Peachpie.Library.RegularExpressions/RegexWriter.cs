@@ -140,7 +140,7 @@ namespace Peachpie.Library.RegularExpressions
             PatchJump(0, _emitted.Length);
             Emit(RegexCode.Stop);
 
-            RegexPrefix? fcPrefix = RegexFCD.FirstChars(tree);
+            RegexPrefix fcPrefix = RegexFCD.FirstChars(tree);
             RegexPrefix prefix = RegexFCD.Prefix(tree);
             bool rtl = ((tree.Options & RegexOptions.RightToLeft) != 0);
 

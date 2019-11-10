@@ -459,14 +459,16 @@ namespace Peachpie.Library.RegularExpressions
 
                 return true;
             }
-            else if (_code._fcPrefix == null)
+            else if (_code._fcPrefix.IsDefault)
             {
                 return true;
             }
 
+            Debug.Assert(!_code._fcPrefix.IsDefault);
+
             _rightToLeft = _code._rightToLeft;
-            _caseInsensitive = _code._fcPrefix.GetValueOrDefault().CaseInsensitive;
-            string set = _code._fcPrefix.GetValueOrDefault().Prefix;
+            _caseInsensitive = _code._fcPrefix.CaseInsensitive;
+            string set = _code._fcPrefix.Prefix;
 
             if (RegexCharClass.IsSingleton(set))
             {

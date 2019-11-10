@@ -14,8 +14,10 @@ namespace Peachpie.Library.RegularExpressions
 
         internal bool CaseInsensitive { get; }
 
-        internal static RegexPrefix Empty { get; } = new RegexPrefix(string.Empty, false);
+        internal static RegexPrefix Empty => new RegexPrefix(string.Empty, false);
 
         internal string Prefix { get; }
+
+        internal bool IsDefault => Prefix == null;
     }
 }
