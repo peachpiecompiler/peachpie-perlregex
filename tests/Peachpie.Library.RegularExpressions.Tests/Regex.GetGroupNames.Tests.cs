@@ -54,12 +54,13 @@ namespace Peachpie.Library.RegularExpressions.Tests
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "xyz", "8978", "abc", "][]12_+-" }
             };
 
+            // FIXME Handle this properly with the PCRE semantics once 'J' flag (PCRE2_DUPNAMES) is implemented
             yield return new object[]
             {
-                SkippedPatternNamedGroup + "/(?<first_name>\\S+)\\s(?<first_name>\\S+)/", "Ryan Byington",
-                new string[] { "0", "first_name" },
-                new int[] { 0, 1 },
-                new string[] { "Ryan Byington", "Byington" }
+                "/(?<first_name>\\S+)\\s(?<first_name>\\S+)/", "Ryan Byington",
+                new string[] { "0", "first_name", "2" },
+                new int[] { 0, 1, 2 },
+                new string[] { "Ryan Byington", "Byington", "" }
             };
 
             yield return new object[]
@@ -102,12 +103,13 @@ namespace Peachpie.Library.RegularExpressions.Tests
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "xyz", "8978", "abc", "][]12_+-" }
             };
 
+            // FIXME Handle this properly with the PCRE semantics once 'J' flag (PCRE2_DUPNAMES) is implemented
             yield return new object[]
             {
-                SkippedPatternNamedGroup + "/(?'first_name'\\S+)\\s(?'first_name'\\S+)/", "Ryan Byington",
-                new string[] { "0", "first_name" },
-                new int[] { 0, 1 },
-                new string[] { "Ryan Byington", "Byington" }
+                "/(?'first_name'\\S+)\\s(?'first_name'\\S+)/", "Ryan Byington",
+                new string[] { "0", "first_name", "2" },
+                new int[] { 0, 1, 2 },
+                new string[] { "Ryan Byington", "Byington", "" }
             };
 
             yield return new object[]
@@ -119,12 +121,10 @@ namespace Peachpie.Library.RegularExpressions.Tests
             };
         }
 
-        [SkippableTheory]
+        [Theory]
         [MemberData(nameof(GroupNamesAndNumbers_TestData))]
         public void GroupNamesAndNumbers(string pattern, string input, string[] expectedNames, int[] expectedNumbers, string[] expectedGroups)
         {
-            SkipIfMarked(ref pattern);
-
             Regex regex = new Regex(pattern);
             Match match = regex.Match(input);
             Assert.True(match.Success);

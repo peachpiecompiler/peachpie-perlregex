@@ -19,21 +19,19 @@ namespace Peachpie.Library.RegularExpressions.Tests
     {
         public static IEnumerable<object[]> Ctor_TestData()
         {
-            yield return new object[] { SkippedPattern + "/foo/", RegexOptions.None, Timeout.InfiniteTimeSpan };    // We have CultureInvariant as default
+            yield return new object[] { "/foo/", RegexOptions.CultureInvariant, Timeout.InfiniteTimeSpan };    // We have CultureInvariant as default
             yield return new object[] { "/foo/", RegexOptions.RightToLeft, Timeout.InfiniteTimeSpan };
             yield return new object[] { "/foo/", RegexOptions.Compiled, Timeout.InfiniteTimeSpan };
             yield return new object[] { "/foo/", RegexOptions.ECMAScript | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant, Timeout.InfiniteTimeSpan };
-            yield return new object[] { SkippedPattern + "/foo/", RegexOptions.ECMAScript | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.Compiled, Timeout.InfiniteTimeSpan };    // Compilation is not supported
+            //yield return new object[] { "/foo/", RegexOptions.ECMAScript | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.Compiled, Timeout.InfiniteTimeSpan };    // FIXME Compilation is not supported
             yield return new object[] { "/foo/", RegexOptions.None, new TimeSpan(1) };
             yield return new object[] { "/foo/", RegexOptions.None, TimeSpan.FromMilliseconds(int.MaxValue - 1) };
         }
 
-        [SkippableTheory]
+        [Theory]
         [MemberData(nameof(Ctor_TestData))]
         public static void Ctor(string pattern, RegexOptions options, TimeSpan matchTimeout)
         {
-            SkipIfMarked(ref pattern);
-
             if (matchTimeout == Timeout.InfiniteTimeSpan)
             {
                 if (options == RegexOptions.None)

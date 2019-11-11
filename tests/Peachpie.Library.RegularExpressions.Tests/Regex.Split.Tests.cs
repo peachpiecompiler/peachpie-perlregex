@@ -26,15 +26,15 @@ namespace Peachpie.Library.RegularExpressions.Tests
             yield return new object[] { "/a(.)c(.)e/", "123abcde456aBCDe789", RegexOptions.None, 19, 0, new string[] { "123", "b", "d", "456aBCDe789" } };
             yield return new object[] { "/a(.)c(.)e/", "123abcde456aBCDe789", RegexOptions.IgnoreCase, 19, 0, new string[] { "123", "b", "d", "456", "B", "D", "789" } };
 
-            yield return new object[] { SkippedPatternNamedGroup + "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.None, 19, 0, new string[] { "123", "d", "b", "456aBCDe789" } };
-            yield return new object[] { SkippedPatternNamedGroup + "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.IgnoreCase, 19, 0, new string[] { "123", "d", "b", "456", "D", "B", "789" } };
+            yield return new object[] { "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.None, 19, 0, new string[] { "123", "b", "d", "456aBCDe789" } };
+            yield return new object[] { "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.IgnoreCase, 19, 0, new string[] { "123", "b", "d", "456", "B", "D", "789" } };
 
             // RightToLeft
             yield return new object[] { "/a(.)c(.)e/", "123abcde456aBCDe789", RegexOptions.RightToLeft, 19, 19, new string[] { "123", "d", "b", "456aBCDe789" } };
             yield return new object[] { "/a(.)c(.)e/", "123abcde456aBCDe789", RegexOptions.RightToLeft | RegexOptions.IgnoreCase, 19, 19, new string[] { "123", "d", "b", "456", "D", "B", "789" } };
 
-            yield return new object[] { SkippedPatternNamedGroup + "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.RightToLeft, 19, 19, new string[] { "123", "b", "d", "456aBCDe789" } };
-            yield return new object[] { SkippedPatternNamedGroup + "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.RightToLeft | RegexOptions.IgnoreCase, 19, 19, new string[] { "123", "b", "d", "456", "B", "D", "789" } };
+            yield return new object[] { "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.RightToLeft, 19, 19, new string[] { "123", "d", "b", "456aBCDe789" } };
+            yield return new object[] { "/a(?<dot1>.)c(.)e/", "123abcde456aBCDe789", RegexOptions.RightToLeft | RegexOptions.IgnoreCase, 19, 19, new string[] { "123", "d", "b", "456", "D", "B", "789" } };
 
             // IgnoreCase
             yield return new object[] { "/[abc]/", "1A2B3C4", RegexOptions.IgnoreCase, 7, 0, new string[] { "1", "2", "3", "4" } };
@@ -52,13 +52,11 @@ namespace Peachpie.Library.RegularExpressions.Tests
             yield return new object[] { @"/\d/", "1a2b3c4d5e6f7g8h9i0k", RegexOptions.RightToLeft, 1, 20, new string[] { "1a2b3c4d5e6f7g8h9i0k" } };
         }
 
-        [SkippableTheory]
+        [Theory]
         [MemberData(nameof(Split_NonCompiled_TestData))]
         [MemberData(nameof(RegexCompilationHelper.TransformRegexOptions), nameof(Split_NonCompiled_TestData), 2, MemberType = typeof(RegexCompilationHelper))]
         public void Split(string pattern, string input, RegexOptions options, int count, int start, string[] expected)
         {
-            SkipIfMarked(ref pattern);
-
             bool isDefaultStart = RegexHelpers.IsDefaultStart(input, options, start);
             bool isDefaultCount = RegexHelpers.IsDefaultStart(input, options, count);
             if (options == RegexOptions.None)
