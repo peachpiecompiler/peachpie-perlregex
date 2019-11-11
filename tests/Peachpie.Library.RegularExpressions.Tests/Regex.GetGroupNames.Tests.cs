@@ -32,23 +32,23 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             yield return new object[]
             {
-                SkippedPatternNamedGroup + @"/((?<One>abc)\d+)?(?<Two>xyz)(.*)/", "abc208923xyzanqnakl",
-                new string[] { "0", "1", "2", "One", "Two" },
+                @"/((?<One>abc)\d+)?(?<Two>xyz)(.*)/", "abc208923xyzanqnakl",
+                new string[] { "0", "1", "One", "Two", "4" },
                 new int[] { 0, 1, 2, 3, 4 },
-                new string[] { "abc208923xyzanqnakl", "abc208923", "anqnakl", "abc", "xyz" }
+                new string[] { "abc208923xyzanqnakl", "abc208923", "abc", "xyz", "anqnakl" }
             };
 
             yield return new object[]
             {
-                SkippedPatternNamedGroup + @"/((?<256>abc)\d+)?(?<16>xyz)(.*)/", "0272saasdabc8978xyz][]12_+-",
-                new string[] { "0", "1", "2", "16", "256" },
-                new int[] { 0, 1, 2, 16, 256 },
+                @"/((?<256>abc)\d+)?(?<16>xyz)(.*)/", "0272saasdabc8978xyz][]12_+-",
+                new string[] { "0", "1", "4", "16", "256" },
+                new int[] { 0, 1, 4, 16, 256 },
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "][]12_+-", "xyz", "abc" }
             };
 
             yield return new object[]
             {
-                SkippedPatternNamedGroup + @"/((?<4>abc)(?<digits>\d+))?(?<2>xyz)(?<everything_else>.*)/", "0272saasdabc8978xyz][]12_+-",
+                @"/((?<4>abc)(?<digits>\d+))?(?<2>xyz)(?<everything_else>.*)/", "0272saasdabc8978xyz][]12_+-",
                 new string[] { "0", "1", "2", "digits", "4", "everything_else" },
                 new int[] { 0, 1, 2, 3, 4, 5 },
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "xyz", "8978", "abc", "][]12_+-" }
@@ -80,23 +80,23 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             yield return new object[]
             {
-                SkippedPatternNamedGroup + @"/((?'One'abc)\d+)?(?'Two'xyz)(.*)/", "abc208923xyzanqnakl",
-                new string[] { "0", "1", "2", "One", "Two" },
+                @"/((?'One'abc)\d+)?(?'Two'xyz)(.*)/", "abc208923xyzanqnakl",
+                new string[] { "0", "1", "One", "Two", "4" },
                 new int[] { 0, 1, 2, 3, 4 },
-                new string[] { "abc208923xyzanqnakl", "abc208923", "anqnakl", "abc", "xyz" }
+                new string[] { "abc208923xyzanqnakl", "abc208923", "abc", "xyz", "anqnakl" }
             };
 
             yield return new object[]
             {
-                SkippedPatternNamedGroup + @"/((?'256'abc)\d+)?(?'16'xyz)(.*)/", "0272saasdabc8978xyz][]12_+-",
-                new string[] { "0", "1", "2", "16", "256" },
-                new int[] { 0, 1, 2, 16, 256 },
+                @"/((?'256'abc)\d+)?(?'16'xyz)(.*)/", "0272saasdabc8978xyz][]12_+-",
+                new string[] { "0", "1", "4", "16", "256" },
+                new int[] { 0, 1, 4, 16, 256 },
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "][]12_+-", "xyz", "abc" }
             };
 
             yield return new object[]
             {
-                SkippedPatternNamedGroup + @"/((?'4'abc)(?'digits'\d+))?(?'2'xyz)(?'everything_else'.*)/", "0272saasdabc8978xyz][]12_+-",
+                @"/((?'4'abc)(?'digits'\d+))?(?'2'xyz)(?'everything_else'.*)/", "0272saasdabc8978xyz][]12_+-",
                 new string[] { "0", "1", "2", "digits", "4", "everything_else" },
                 new int[] { 0, 1, 2, 3, 4, 5 },
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "xyz", "8978", "abc", "][]12_+-" }
@@ -154,11 +154,9 @@ namespace Peachpie.Library.RegularExpressions.Tests
         [InlineData("/foo/", -1)]
         [InlineData("/(?<first_name>\\S+)\\s(?<last_name>\\S+)/", -1)]
         [InlineData("/(?<first_name>\\S+)\\s(?<last_name>\\S+)/", 3)]
-        [InlineData(SkippedPatternNamedGroup + @"/((?<256>abc)\d+)?(?<16>xyz)(.*)/", -1)]
+        [InlineData(@"/((?<256>abc)\d+)?(?<16>xyz)(.*)/", -1)]
         public void GroupNameFromNumber_InvalidIndex_ReturnsEmptyString(string pattern, int index)
         {
-            SkipIfMarked(ref pattern);
-
             Assert.Same(string.Empty, new Regex(pattern).GroupNameFromNumber(index));
         }
 

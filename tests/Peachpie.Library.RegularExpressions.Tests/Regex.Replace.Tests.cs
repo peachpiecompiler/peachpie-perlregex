@@ -77,7 +77,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
             yield return new object[] { @"/(hello)\s+world/", "START hello    world END", "$234 $1 $1 $234 $3$4", RegexOptions.ECMAScript, 24, 0, "START $234 hello hello $234 $3$4 END" };
             yield return new object[] { @"/(hello)\s+(world)/", "START hello    world END", "$2 $1 $1 $2 $3$4", RegexOptions.ECMAScript, 24, 0, "START world hello hello world $3$4 END" };
             yield return new object[] { @"/(hello)\s+(world)/", "START hello    world END", "$2 $1 $1 $2 $123$234", RegexOptions.ECMAScript, 24, 0, "START world hello hello world hello23world34 END" };
-            yield return new object[] { SkippedPatternNamedGroup + @"/(?<12>hello)\s+(world)/", "START hello    world END", "$1 $12 $12 $1 $123$134", RegexOptions.ECMAScript, 24, 0, "START world hello hello world hello3world34 END" };
+            yield return new object[] { @"/(?<12>hello)\s+(world)/", "START hello    world END", "$2 $12 $12 $2 $123$234", RegexOptions.ECMAScript, 24, 0, "START world hello hello world hello3world34 END" };
             yield return new object[] { @"/(?<123>hello)\s+(?<23>world)/", "START hello    world END", "$23 $123 $123 $23 $123$234", RegexOptions.ECMAScript, 24, 0, "START world hello hello world helloworld4 END" };
             yield return new object[] { @"/(?<123>hello)\s+(?<234>world)/", "START hello    world END", "$234 $123 $123 $234 $123456$234567", RegexOptions.ECMAScript, 24, 0, "START world hello hello world hello456world567 END" };
 
@@ -116,8 +116,6 @@ namespace Peachpie.Library.RegularExpressions.Tests
         [MemberData(nameof(RegexCompilationHelper.TransformRegexOptions), nameof(Replace_String_TestData), 3, MemberType = typeof(RegexCompilationHelper))]
         public void Replace(string pattern, string input, string replacement, RegexOptions options, int count, int start, string expected)
         {
-            SkipIfMarked(ref pattern);
-
             bool isDefaultStart = RegexHelpers.IsDefaultStart(input, options, start);
             bool isDefaultCount = RegexHelpers.IsDefaultCount(input, options, count);
             if (options == RegexOptions.None)
