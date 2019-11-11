@@ -6,8 +6,6 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-using static Peachpie.Library.RegularExpressions.Tests.SkipHelper;
-
 namespace Peachpie.Library.RegularExpressions.Tests
 {
     public class GetGroupNamesTests
@@ -149,7 +147,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
             }
         }
 
-        [SkippableTheory]
+        [Theory]
         [InlineData("/foo/", 1)]
         [InlineData("/foo/", -1)]
         [InlineData("/(?<first_name>\\S+)\\s(?<last_name>\\S+)/", -1)]

@@ -6,8 +6,6 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-using static Peachpie.Library.RegularExpressions.Tests.SkipHelper;
-
 namespace Peachpie.Library.RegularExpressions.Tests
 {
     public class RegexSplitTests

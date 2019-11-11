@@ -11,8 +11,6 @@ using System.Linq;
 //using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
-using static Peachpie.Library.RegularExpressions.Tests.SkipHelper;
-
 namespace Peachpie.Library.RegularExpressions.Tests
 {
     public class RegexMatchTests
@@ -304,7 +302,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
             yield return new object[] { @"/(\uD82F[\uDCA0-\uDCA3])/", "\uD82F\uDCA2", RegexOptions.CultureInvariant, 0, 2, true, "\uD82F\uDCA2" };
         }
 
-        [SkippableTheory]
+        [Theory]
         [MemberData(nameof(Match_Basic_TestData))]
         [MemberData(nameof(RegexCompilationHelper.TransformRegexOptions), nameof(Match_Basic_TestData), 2, MemberType = typeof(RegexCompilationHelper))]
         public void Match(string pattern, string input, RegexOptions options, int beginning, int length, bool expectedSuccess, string expectedValue)
@@ -771,7 +769,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
             }
         }
 
-        [SkippableTheory]
+        [Theory]
         [InlineData(@"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${time}", "16:00")]
         [InlineData(@"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${1}", "08")]
         [InlineData(@"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${2}", "10")]

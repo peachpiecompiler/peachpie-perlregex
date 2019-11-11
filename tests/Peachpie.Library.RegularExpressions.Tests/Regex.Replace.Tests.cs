@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-using static Peachpie.Library.RegularExpressions.Tests.SkipHelper;
-
 namespace Peachpie.Library.RegularExpressions.Tests
 {
     public class RegexReplaceTests
@@ -111,7 +109,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
             yield return new object[] { "/([1-9])([1-9])([1-9])def/", "abc123def!", "$_", RegexOptions.RightToLeft, -1, 10, "abcabc123def!!" };
         }
 
-        [SkippableTheory]
+        [Theory]
         [MemberData(nameof(Replace_String_TestData))]
         [MemberData(nameof(RegexCompilationHelper.TransformRegexOptions), nameof(Replace_String_TestData), 3, MemberType = typeof(RegexCompilationHelper))]
         public void Replace(string pattern, string input, string replacement, RegexOptions options, int count, int start, string expected)
