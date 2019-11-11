@@ -2073,8 +2073,10 @@ namespace Peachpie.Library.RegularExpressions
                                         else
                                         {
                                             NoteCaptureName(ScanCapname(), _autocap);
-                                            NoteCaptureSlot(_autocap++, pos);
+                                            NoteCaptureSlot(_autocap, pos);
                                         }
+
+                                        _autocap++;
                                     }
                                 }
                                 else
