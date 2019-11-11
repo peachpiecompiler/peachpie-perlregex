@@ -683,8 +683,6 @@ namespace Peachpie.Library.RegularExpressions
 
         public static string ConvertOldStringsToClass(string set, string category)
         {
-            // FIXME
-
             var sb = new StringBuilder(set.Length + category.Length + 3);
 
             if (set.Length >= 2 && set[0] == '\0' && set[1] == '\0')
@@ -704,35 +702,6 @@ namespace Peachpie.Library.RegularExpressions
             sb.Append(category);
 
             return sb.ToString();
-
-            //bool startsWithNulls = set.Length >= 2 && set[0] == '\0' && set[1] == '\0';
-            //int strLength = set.Length + category.Length + 3;
-            //if (startsWithNulls)
-            //    strLength -= 2;
-
-            //return string.Create(strLength, (set, category, startsWithNulls), (span, state) =>
-            //{
-            //    int index;
-
-            //    if (state.startsWithNulls)
-            //    {
-            //        span[0] = (char)0x1;
-            //        span[1] = (char)(state.set.Length - 2);
-            //        span[2] = (char)state.category.Length;
-            //        state.set.AsSpan(2).CopyTo(span.Slice(3));
-            //        index = 3 + state.set.Length - 2;
-            //    }
-            //    else
-            //    {
-            //        span[0] = (char)0x0;
-            //        span[1] = (char)state.set.Length;
-            //        span[2] = (char)state.category.Length;
-            //        state.set.AsSpan().CopyTo(span.Slice(3));
-            //        index = 3 + state.set.Length;
-            //    }
-
-            //    state.category.AsSpan().CopyTo(span.Slice(index));
-            //});
         }
 
         /// <summary>
@@ -983,8 +952,6 @@ namespace Peachpie.Library.RegularExpressions
 
         private static string NegateCategory(string category)
         {
-            // FIXME
-
             if (category == null)
                 return null;
 
@@ -996,15 +963,6 @@ namespace Peachpie.Library.RegularExpressions
                 sb.Append((char)-ch);
             }
             return sb.ToString();
-
-            //return string.Create(category.Length, category, (span, _category) =>
-            //{
-            //    for (int i = 0; i < _category.Length; i++)
-            //    {
-            //        short ch = (short)_category[i];
-            //        span[i] = unchecked((char)-ch);
-            //    }
-            //});
         }
 
         public static RegexCharClass Parse(string charClass)
@@ -1086,13 +1044,7 @@ namespace Peachpie.Library.RegularExpressions
 
             vsb[SETLENGTH] = (char)(vsb.Length - SETSTART);
 
-            // FIXME
             vsb.Append(_categories.ToString());
-            //// Append the categories string
-            //foreach (ReadOnlyMemory<char> chunk in _categories.GetChunks())
-            //{
-            //    vsb.Append(chunk.Span);
-            //}
 
             if (_subtractor != null)
                 vsb.Append(_subtractor.ToStringClass());

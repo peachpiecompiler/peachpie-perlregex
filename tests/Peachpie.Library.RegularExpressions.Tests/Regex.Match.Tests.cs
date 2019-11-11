@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-// FIXME
 //using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
@@ -382,7 +381,6 @@ namespace Peachpie.Library.RegularExpressions.Tests
         //    }).Dispose();
         //}
 
-        // FIXME
         //// On 32-bit we can't test these high inputs as they cause OutOfMemoryExceptions.
         //[ConditionalTheory(typeof(Environment), nameof(Environment.Is64BitProcess))]
         //[InlineData(RegexOptions.Compiled)]
@@ -395,7 +393,6 @@ namespace Peachpie.Library.RegularExpressions.Tests
         //    Assert.Throws<RegexMatchTimeoutException>(() => regex.Match(input));
         //}
 
-        // FIXME
         //// On 32-bit we can't test these high inputs as they cause OutOfMemoryExceptions.
         //[ConditionalTheory(typeof(Environment), nameof(Environment.Is64BitProcess))]
         //[InlineData(RegexOptions.Compiled)]

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-// FIXME
 //using Microsoft.DotNet.RemoteExecutor;
 using Xunit;
 
