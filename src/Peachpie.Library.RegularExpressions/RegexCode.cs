@@ -367,7 +367,7 @@ namespace Peachpie.Library.RegularExpressions
             int i;
 
             Debug.WriteLine("Direction:  " + (_rightToLeft ? "right-to-left" : "left-to-right"));
-            Debug.WriteLine("Firstchars: " + (_fcPrefix == null ? "n/a" : RegexCharClass.SetDescription(_fcPrefix.Prefix)));
+            Debug.WriteLine("Firstchars: " + (_fcPrefix.IsDefault ? "n/a" : RegexCharClass.SetDescription(_fcPrefix.Prefix)));
             Debug.WriteLine("Prefix:     " + (_bmPrefix == null ? "n/a" : Regex.Escape(_bmPrefix.ToString())));
             Debug.WriteLine("Anchors:    " + RegexFCD.AnchorDescription(_anchors));
             Debug.WriteLine("");

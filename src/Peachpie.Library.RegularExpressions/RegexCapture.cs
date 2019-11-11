@@ -7,6 +7,7 @@
 // search may return multiple Capture within each capturing
 // RegexGroup.
 
+using System;
 using System.Text;
 
 namespace Peachpie.Library.RegularExpressions
@@ -17,106 +18,47 @@ namespace Peachpie.Library.RegularExpressions
     /// </summary>
     public class Capture
     {
-        internal string _text;
-        internal int _index;
-        internal int _length;
-
         internal Capture(string text, int index, int length)
         {
-            _text = text;
-            _index = index;
-            _length = length;
+            Text = text;
+            Index = index;
+            Length = length;
         }
 
-        /*
-         * The index of the beginning of the matched capture
-         */
         /// <summary>
         /// Returns the position in the original string where the first character of
         /// captured substring was found.
         /// </summary>
-        public int Index
-        {
-            get
-            {
-                return _index;
-            }
-        }
+        public int Index { get; private protected set; }
 
-        /*
-         * The length of the matched capture
-         */
         /// <summary>
         /// Returns the length of the captured substring.
         /// </summary>
-        public int Length
-        {
-            get
-            {
-                return _length;
-            }
-        }
+        public int Length { get; private protected set; }
+
+        /// <summary>
+        /// The original string
+        /// </summary>
+        internal string Text { get; private protected set; }
 
         /// <summary>
         /// Returns the value of this Regex Capture.
         /// </summary>
-        public string Value
-        {
-            get
-            {
-                return _text.Substring(_index, _length);
-            }
-        }
+        public string Value => Text.Substring(Index, Length);
 
-        /*
-         * The capture as a string
-         */
         /// <summary>
         /// Returns the substring that was matched.
         /// </summary>
-        override public string ToString()
-        {
-            return Value;
-        }
+        public override string ToString() => Value;
 
-        /*
-         * The original string
-         */
-        internal string GetOriginalString()
-        {
-            return _text;
-        }
+        /// <summary>
+        /// The substring to the left of the capture
+        /// </summary>
+        internal ReadOnlySpan<char> GetLeftSubstring() => Text.AsSpan(0, Index);
 
-        /*
-         * The substring to the left of the capture
-         */
-        internal string GetLeftSubstring()
-        {
-            return _text.Substring(0, _index);
-        }
-
-        /*
-         * The substring to the right of the capture
-         */
-        internal string GetRightSubstring()
-        {
-            return _text.Substring(_index + _length, _text.Length - _index - _length);
-        }
-
-#if DEBUG
-        internal virtual string Description()
-        {
-            var Sb = new StringBuilder();
-
-            Sb.Append("(I = ");
-            Sb.Append(_index);
-            Sb.Append(", L = ");
-            Sb.Append(_length);
-            Sb.Append("): ");
-            Sb.Append(_text, _index, _length);
-
-            return Sb.ToString();
-        }
-#endif
+        /// <summary>
+        /// The substring to the right of the capture
+        /// </summary>
+        internal ReadOnlySpan<char> GetRightSubstring() => Text.AsSpan(Index + Length, Text.Length - Index - Length);
     }
 }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.489
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29409.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{1ED47D14-DCE0-4357-A27B-583FBE9DC2B1}"
 	ProjectSection(SolutionItems) = preProject
@@ -12,7 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{1ED47D14
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Peachpie.Library.RegularExpressions", "src\Peachpie.Library.RegularExpressions\Peachpie.Library.RegularExpressions.csproj", "{B028FBF4-53D7-42C7-8243-C5F0D087C892}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Peachpie.Library.RegularExpressions.Tests", "tests\Peachpie.Library.RegularExpressions.Tests\Peachpie.Library.RegularExpressions.Tests.csproj", "{7AFF0782-D0BB-4C21-9653-694BDE110C9A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Peachpie.Library.RegularExpressions.Tests", "tests\Peachpie.Library.RegularExpressions.Tests\Peachpie.Library.RegularExpressions.Tests.csproj", "{7AFF0782-D0BB-4C21-9653-694BDE110C9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Peachpie.Library.RegularExpressions.Benchmarks", "tests\Peachpie.Library.RegularExpressions.Benchmarks\Peachpie.Library.RegularExpressions.Benchmarks.csproj", "{4C251EA2-F814-4437-B3AD-92712C0A997A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,6 +30,10 @@ Global
 		{7AFF0782-D0BB-4C21-9653-694BDE110C9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AFF0782-D0BB-4C21-9653-694BDE110C9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AFF0782-D0BB-4C21-9653-694BDE110C9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C251EA2-F814-4437-B3AD-92712C0A997A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C251EA2-F814-4437-B3AD-92712C0A997A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C251EA2-F814-4437-B3AD-92712C0A997A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C251EA2-F814-4437-B3AD-92712C0A997A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

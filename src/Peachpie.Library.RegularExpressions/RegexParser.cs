@@ -21,78 +21,101 @@ using System.Text;
 
 namespace Peachpie.Library.RegularExpressions
 {
-    internal sealed class RegexParser
+    internal ref struct RegexParser
     {
-        RegexNode _stack;
-        RegexNode _group;
-        RegexNode _alternation;
-        RegexNode _concatenation;
-        RegexNode _unit;
+        private const int EscapeMaxBufferSize = 256;
+        private const int OptionStackDefaultSize = 32;
+        private const int MaxValueDiv10 = int.MaxValue / 10;
+        private const int MaxValueMod10 = int.MaxValue % 10;
 
-        string _pattern;
-        int _currentPos;
+        private RegexNode _stack;
+        private RegexNode _group;
+        private RegexNode _alternation;
+        private RegexNode _concatenation;
+        private RegexNode _unit;
+
+        private readonly ReadOnlySpan<char> _pattern;
+        private int _currentPos;
 
         /// <summary>Relative offset of the <see cref="_pattern"/> within the actual input string.</summary>
         int _offsetPos;
 
-        readonly CultureInfo _culture;
+        private readonly CultureInfo _culture;
 
-        int _autocap;
-        int _capcount;
-        int _captop;
-        int _capsize;
+        private int _autocap;
+        private int _capcount;
+        private int _captop;
+        private readonly int _capsize;
 
-        Dictionary<int, int> _caps;
-        Dictionary<string, int> _capnames;
+        private readonly Dictionary<int, int> _caps;
+        private Dictionary<string, int> _capnames;
 
-        int[] _capnumlist;
-        List<string> _capnamelist;
+        private int[] _capnumlist;
+        private List<string> _capnamelist;
 
-        RegexOptions _options;
-        List<RegexOptions> _optionsStack;
+        private RegexOptions _options;
+        private ValueListBuilder<RegexOptions> _optionsStack;
 
-        bool _ignoreNextParen = false;
+        private bool _ignoreNextParen; // flag to skip capturing a parentheses group
 
-        const int MaxValueDiv10 = int.MaxValue / 10;
-        const int MaxValueMod10 = int.MaxValue % 10;
+        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames, Span<RegexOptions> optionSpan)
+        {
+            Debug.Assert(pattern != null, "Pattern must be set");
+            Debug.Assert(culture != null, "Culture must be set");
 
-        /*
-         * This static call constructs a RegexTree from a regular expression
-         * pattern string and an option string.
-         *
-         * The method creates, drives, and drops a parser instance.
-         */
-        internal static RegexTree Parse(string re, RegexOptions op)
+            _pattern = pattern;
+            _options = options;
+            _culture = culture;
+            _caps = caps;
+            _capsize = capsize;
+            _capnames = capnames;
+
+            _optionsStack = new ValueListBuilder<RegexOptions>(optionSpan);
+            _stack = default;
+            _group = default;
+            _alternation = default;
+            _concatenation = default;
+            _unit = default;
+            _currentPos = 0;
+            _offsetPos = 0;
+            _autocap = default;
+            _capcount = default;
+            _captop = default;
+            _capnumlist = default;
+            _capnamelist = default;
+            _ignoreNextParen = false;
+        }
+
+        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Span<RegexOptions> optionSpan)
+            : this(pattern, options, culture, new Dictionary<int, int>(), default, null, optionSpan)
+        {
+        }
+
+        public static RegexTree Parse(string re, RegexOptions options)
         {
             int end;
-            op |= TrimPcreRegexOption(re, out end);
+            options |= TrimPcreRegexOption(re, out end);
             var pattern = TrimDelimiters(re, end, out var offset);
+            var culture = (options & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture;
 
-            RegexParser p;
-            RegexNode root;
-            string[] capnamelist;
+            Span<RegexOptions> optionSpan = stackalloc RegexOptions[OptionStackDefaultSize];
+            var parser = new RegexParser(pattern, options, culture, optionSpan);
+            
+            parser._offsetPos = offset;
+            parser.CountCaptures();
+            parser.Reset(options);
+            RegexNode root = parser.ScanRegex();
+            string[] capnamelist = parser._capnamelist?.ToArray();
+            var tree = new RegexTree(root, parser._caps, parser._capnumlist, parser._captop, parser._capnames, capnamelist, options);
+            parser.Dispose();
 
-            p = new RegexParser((op & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture);
-
-            p._options = op;
-
-            p.SetPattern(pattern, offset);
-            p.CountCaptures();
-            p.Reset(op);
-            root = p.ScanRegex();
-
-            if (p._capnamelist == null)
-                capnamelist = null;
-            else
-                capnamelist = p._capnamelist.ToArray();
-
-            return new RegexTree(root, p._caps, p._capnumlist, p._captop, p._capnames, capnamelist, op);
+            return tree;
         }
 
         /// <summary>
         /// Matches end and start delimiters and returns enclosed pattern.
         /// </summary>
-        private static string TrimDelimiters(string re, int end, out int offset)
+        private static ReadOnlySpan<char> TrimDelimiters(string re, int end, out int offset)
         {
             Debug.Assert(re != null);
             Debug.Assert(end <= re.Length);
@@ -126,7 +149,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (re[i] == start_delimiter)
                     {
                         offset = i + 1;
-                        return re.Substring(offset, end - offset - 1);
+                        return re.AsSpan(offset, end - offset - 1);
                     }
                     else
                     {
@@ -179,161 +202,160 @@ namespace Peachpie.Library.RegularExpressions
             return RegexOptions.None;
         }
 
-        /*
-         * This static call constructs a flat concatenation node given
-         * a replacement pattern.
-         */
-        internal static RegexReplacement ParseReplacement(string rep, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames, RegexOptions op)
+        /// <summary>
+        /// This static call constructs a flat concatenation node given a replacement pattern.
+        /// </summary>
+        public static RegexReplacement ParseReplacement(string pattern, RegexOptions options, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames)
         {
-            RegexParser p;
-            RegexNode root;
+            CultureInfo culture = (options & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture;
+            Span<RegexOptions> optionSpan = stackalloc RegexOptions[OptionStackDefaultSize];
+            var parser = new RegexParser(pattern.AsSpan(), options, culture, caps, capsize, capnames, optionSpan);
 
-            p = new RegexParser((op & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture);
+            RegexNode root = parser.ScanReplacement();
+            var regexReplacement = new RegexReplacement(pattern, root, caps);
+            parser.Dispose();
 
-            p._options = op;
-
-            p.NoteCaptures(caps, capsize, capnames);
-            p.SetPattern(rep, 0);
-            root = p.ScanReplacement();
-
-            return new RegexReplacement(rep, root, caps);
+            return regexReplacement;
         }
 
-        /*
-         * Escapes all metacharacters (including |,(,),[,{,|,^,$,*,+,?,\, spaces and #)
-         */
-        internal static string Escape(string input)
+        /// <summary>
+        /// Escapes all metacharacters (including |,(,),[,{,|,^,$,*,+,?,\, spaces and #)
+        /// </summary>
+        public static string Escape(string input)
         {
             for (int i = 0; i < input.Length; i++)
             {
                 if (IsMetachar(input[i]))
                 {
-                    var sb = new StringBuilder();
-                    char ch = input[i];
-                    int lastpos;
-
-                    sb.Append(input, 0, i);
-                    do
-                    {
-                        sb.Append('\\');
-                        switch (ch)
-                        {
-                            case '\n':
-                                ch = 'n';
-                                break;
-                            case '\r':
-                                ch = 'r';
-                                break;
-                            case '\t':
-                                ch = 't';
-                                break;
-                            case '\f':
-                                ch = 'f';
-                                break;
-                        }
-                        sb.Append(ch);
-                        i++;
-                        lastpos = i;
-
-                        while (i < input.Length)
-                        {
-                            ch = input[i];
-                            if (IsMetachar(ch))
-                                break;
-
-                            i++;
-                        }
-
-                        sb.Append(input, lastpos, i - lastpos);
-                    } while (i < input.Length);
-
-                    return sb.ToString();
+                    return EscapeImpl(input, i);
                 }
             }
 
             return input;
         }
 
-        /*
-         * Escapes all metacharacters (including (,),[,],{,},|,^,$,*,+,?,\, spaces and #)
-         */
-        internal static string Unescape(string input)
+        private static string EscapeImpl(string input, int i)
+        {
+            // For small inputs we allocate on the stack. In most cases a buffer three
+            // times larger the original string should be sufficient as usually not all
+            // characters need to be encoded.
+            // For larger string we rent the input string's length plus a fixed
+            // conservative amount of chars from the ArrayPool.
+            Span<char> buffer = input.Length <= (EscapeMaxBufferSize / 3) ? stackalloc char[EscapeMaxBufferSize] : default;
+            ValueStringBuilder vsb = !buffer.IsEmpty ?
+                new ValueStringBuilder(buffer) :
+                new ValueStringBuilder(input.Length + 200);
+
+            char ch = input[i];
+            vsb.Append(input.AsSpan(0, i));
+
+            do
+            {
+                vsb.Append('\\');
+                switch (ch)
+                {
+                    case '\n':
+                        ch = 'n';
+                        break;
+                    case '\r':
+                        ch = 'r';
+                        break;
+                    case '\t':
+                        ch = 't';
+                        break;
+                    case '\f':
+                        ch = 'f';
+                        break;
+                }
+                vsb.Append(ch);
+                i++;
+                int lastpos = i;
+
+                while (i < input.Length)
+                {
+                    ch = input[i];
+                    if (IsMetachar(ch))
+                        break;
+
+                    i++;
+                }
+
+                vsb.Append(input.AsSpan(lastpos, i - lastpos));
+            } while (i < input.Length);
+
+            return vsb.ToString();
+        }
+
+        /// <summary>
+        /// Unescapes all metacharacters (including (,),[,],{,},|,^,$,*,+,?,\, spaces and #)
+        /// </summary>
+        public static string Unescape(string input)
         {
             for (int i = 0; i < input.Length; i++)
             {
                 if (input[i] == '\\')
                 {
-                    var sb = new StringBuilder();
-                    RegexParser p = new RegexParser(CultureInfo.InvariantCulture);
-                    int lastpos;
-                    p.SetPattern(input, 0);
-
-                    sb.Append(input, 0, i);
-                    do
-                    {
-                        i++;
-                        p.Textto(i);
-                        if (i < input.Length)
-                            sb.Append(p.ScanCharEscape(allowNonSpecial: true));
-                        i = p.Textpos();
-                        lastpos = i;
-                        while (i < input.Length && input[i] != '\\')
-                            i++;
-                        sb.Append(input, lastpos, i - lastpos);
-                    } while (i < input.Length);
-
-                    return sb.ToString();
+                    return UnescapeImpl(input.AsSpan(), i);
                 }
             }
 
             return input;
         }
 
-        /*
-         * Private constructor.
-         */
-        private RegexParser(CultureInfo culture)
+        private static string UnescapeImpl(ReadOnlySpan<char> input, int i)
         {
-            _culture = culture;
-            _optionsStack = new List<RegexOptions>();
-            _caps = new Dictionary<int, int>();
-        }
+            Span<RegexOptions> optionSpan = stackalloc RegexOptions[OptionStackDefaultSize];
+            var parser = new RegexParser(input, RegexOptions.None, CultureInfo.InvariantCulture, optionSpan);
 
-        /*
-         * Drops a string into the pattern buffer.
-         */
-        internal void SetPattern(string Re, int ReOffset)
-        {
-            if (Re == null)
+            // In the worst case the escaped string has the same length.
+            // For small inputs we use stack allocation.
+            Span<char> buffer = input.Length <= EscapeMaxBufferSize ? stackalloc char[EscapeMaxBufferSize] : default;
+            ValueStringBuilder vsb = !buffer.IsEmpty ?
+                new ValueStringBuilder(buffer) :
+                new ValueStringBuilder(input.Length);
+
+            vsb.Append(input.Slice(0, i));
+            do
             {
-                Re = string.Empty;
-            }
+                i++;
+                parser.Textto(i);
+                if (i < input.Length)
+                    vsb.Append(parser.ScanCharEscape(allowNonSpecial: true));
+                i = parser.Textpos();
+                int lastpos = i;
+                while (i < input.Length && input[i] != '\\')
+                    i++;
+                vsb.Append(input.Slice(lastpos, i - lastpos));
+            } while (i < input.Length);
 
-            _pattern = Re;
-            _offsetPos = ReOffset;
-            _currentPos = 0;
+            parser.Dispose();
+
+            return vsb.ToString();
         }
 
-        /*
-         * Resets parsing to the beginning of the pattern.
-         */
-        internal void Reset(RegexOptions topopts)
+        /// <summary>
+        /// Resets parsing to the beginning of the pattern.
+        /// </summary>
+        private void Reset(RegexOptions options)
         {
             _currentPos = 0;
             _autocap = 1;
             _ignoreNextParen = false;
-
-            if (_optionsStack.Count > 0)
-                _optionsStack.RemoveRange(0, _optionsStack.Count - 1);
-
-            _options = topopts;
+            _optionsStack.Length = 0;
+            _options = options;
             _stack = null;
+        }
+
+        public void Dispose()
+        {
+            _optionsStack.Dispose();
         }
 
         /*
          * The main parsing function.
          */
-        internal RegexNode ScanRegex()
+
+        private RegexNode ScanRegex()
         {
             char ch = '@'; // nonspecial ch, means at beginning
             bool isQuantifier = false;
@@ -352,10 +374,10 @@ namespace Peachpie.Library.RegularExpressions
                 // move past all of the normal characters.  We'll stop when we hit some kind of control character,
                 // or if IgnorePatternWhiteSpace is on, we'll stop when we see some whitespace.
                 if (UseOptionX())
-                    while (CharsRight() > 0 && (!IsStopperX(ch = RightChar()) || ch == '{' && !IsTrueQuantifier()))
+                    while (CharsRight() > 0 && (!IsStopperX(ch = RightChar()) || (ch == '{' && !IsTrueQuantifier())))
                         MoveRight();
                 else
-                    while (CharsRight() > 0 && (!IsSpecial(ch = RightChar()) || ch == '{' && !IsTrueQuantifier()))
+                    while (CharsRight() > 0 && (!IsSpecial(ch = RightChar()) || (ch == '{' && !IsTrueQuantifier())))
                         MoveRight();
 
                 int endpos = Textpos();
@@ -394,7 +416,7 @@ namespace Peachpie.Library.RegularExpressions
                         goto ContinueOuterScan;
 
                     case '[':
-                        AddUnitSet(ScanCharClass(UseOptionI()).ToStringClass());
+                        AddUnitSet(ScanCharClass(UseOptionI(), scanOnly: false).ToStringClass());
                         break;
 
                     case '(':
@@ -438,7 +460,10 @@ namespace Peachpie.Library.RegularExpressions
                         break;
 
                     case '\\':
-                        AddUnitNode(ScanBackslash());
+                        if (CharsRight() == 0)
+                            throw MakeException(SR.IllegalEndEscape);
+
+                        AddUnitNode(ScanBackslash(scanOnly: false));
                         break;
 
                     case '^':
@@ -464,9 +489,12 @@ namespace Peachpie.Library.RegularExpressions
                     case '+':
                     case '?':
                         if (Unit() == null)
-                            throw MakeException(wasPrevQuantifier ?
-                                                string.Format(SR.NestedQuantify, ch.ToString()) :
-                                                SR.QuantifyAfterNothing);
+                        {
+                            if (wasPrevQuantifier)
+                                throw MakeException(string.Format(SR.NestedQuantify, ch));
+                            else
+                                throw MakeException(SR.QuantifyAfterNothing);
+                        }
                         MoveLeft();
                         break;
 
@@ -482,7 +510,7 @@ namespace Peachpie.Library.RegularExpressions
                     goto ContinueOuterScan;
                 }
 
-                ch = MoveRightGetChar();
+                ch = RightCharMoveRight();
 
                 // Handle quantifiers
                 while (Unit() != null)
@@ -524,7 +552,7 @@ namespace Peachpie.Library.RegularExpressions
                                     }
                                 }
 
-                                if (startpos == Textpos() || CharsRight() == 0 || MoveRightGetChar() != '}')
+                                if (startpos == Textpos() || CharsRight() == 0 || RightCharMoveRight() != '}')
                                 {
                                     AddConcatenate();
                                     Textto(startpos - 1);
@@ -593,22 +621,18 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Simple parsing for replacement patterns
          */
-        internal RegexNode ScanReplacement()
+        private RegexNode ScanReplacement()
         {
-            int c;
-            int startpos;
-            bool backslashref;
-
             _concatenation = new RegexNode(RegexNode.Concatenate, _options);
 
-            for (; ; )
+            while (true)
             {
-                c = CharsRight();
+                int c = CharsRight();
                 if (c == 0)
                     break;
 
-                startpos = Textpos();
-                backslashref = false;
+                int startpos = Textpos();
+                bool backslashref = false;
 
                 while (c > 0 && RightChar() != '$')
                 {
@@ -642,7 +666,7 @@ namespace Peachpie.Library.RegularExpressions
                     {
                         AddUnitNode(ScanBackslashRef());
                     }
-                    else if (MoveRightGetChar() == '$')
+                    else if (RightCharMoveRight() == '$')
                     {
                         AddUnitNode(ScanDollar());
                     }
@@ -658,16 +682,7 @@ namespace Peachpie.Library.RegularExpressions
          * Scans contents of [] (not including []'s), and converts to a
          * RegexCharClass.
          */
-        internal RegexCharClass ScanCharClass(bool caseInsensitive)
-        {
-            return ScanCharClass(caseInsensitive, false);
-        }
-
-        /*
-         * Scans contents of [] (not including []'s), and converts to a
-         * RegexCharClass.
-         */
-        internal RegexCharClass ScanCharClass(bool caseInsensitive, bool scanOnly)
+        private RegexCharClass ScanCharClass(bool caseInsensitive, bool scanOnly)
         {
             char ch = '\0';
             char chPrev = '\0';
@@ -689,7 +704,7 @@ namespace Peachpie.Library.RegularExpressions
             for (; CharsRight() > 0; firstChar = false)
             {
                 bool fTranslatedChar = false;
-                ch = MoveRightGetChar();
+                ch = RightCharMoveRight();
                 if (ch == ']')
                 {
                     if (!firstChar)
@@ -700,15 +715,15 @@ namespace Peachpie.Library.RegularExpressions
                 }
                 else if (ch == '\\' && CharsRight() > 0)
                 {
-                    switch (ch = MoveRightGetChar())
+                    switch (ch = RightCharMoveRight())
                     {
                         case 'D':
                         case 'd':
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
-                                cc.AddDigit(UseOptionE(), ch == 'D', _pattern);
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch));
+                                cc.AddDigit(UseOptionE(), ch == 'D', _currentPos + _offsetPos);
                             }
                             continue;
 
@@ -717,7 +732,7 @@ namespace Peachpie.Library.RegularExpressions
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch));
                                 cc.AddSpace(UseOptionE(), ch == 'S');
                             }
                             continue;
@@ -727,7 +742,7 @@ namespace Peachpie.Library.RegularExpressions
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch));
 
                                 cc.AddWord(UseOptionE(), ch == 'W');
                             }
@@ -738,8 +753,8 @@ namespace Peachpie.Library.RegularExpressions
                             if (!scanOnly)
                             {
                                 if (inRange)
-                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch.ToString()));
-                                cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _pattern);
+                                    throw MakeException(string.Format(SR.BadClassInCharRange, ch));
+                                cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _currentPos + _offsetPos);
                             }
                             else
                                 ParseProperty();
@@ -764,17 +779,13 @@ namespace Peachpie.Library.RegularExpressions
                     // It currently doesn't do anything other than skip the whole thing!
                     if (CharsRight() > 0 && RightChar() == ':' && !inRange)
                     {
-                        string name;
                         int savePos = Textpos();
 
                         MoveRight();
-                        name = ScanCapname();
-                        if (CharsRight() < 2 || MoveRightGetChar() != ':' || MoveRightGetChar() != ']')
+                        if (CharsRight() < 2 || RightCharMoveRight() != ':' || RightCharMoveRight() != ']')
                             Textto(savePos);
-                        // else lookup name (nyi)
                     }
                 }
-
 
                 if (inRange)
                 {
@@ -787,7 +798,7 @@ namespace Peachpie.Library.RegularExpressions
                             // In that case, we'll add chPrev to our char class, skip the opening [, and
                             // scan the new character class recursively.
                             cc.AddChar(chPrev);
-                            cc.AddSubtraction(ScanCharClass(caseInsensitive, false));
+                            cc.AddSubtraction(ScanCharClass(caseInsensitive, scanOnly));
 
                             if (CharsRight() > 0 && RightChar() != ']')
                                 throw MakeException(SR.SubtractionMustBeLast);
@@ -815,7 +826,7 @@ namespace Peachpie.Library.RegularExpressions
                     if (!scanOnly)
                     {
                         MoveRight(1);
-                        cc.AddSubtraction(ScanCharClass(caseInsensitive, false));
+                        cc.AddSubtraction(ScanCharClass(caseInsensitive, scanOnly));
 
                         if (CharsRight() > 0 && RightChar() != ']')
                             throw MakeException(SR.SubtractionMustBeLast);
@@ -823,7 +834,7 @@ namespace Peachpie.Library.RegularExpressions
                     else
                     {
                         MoveRight(1);
-                        ScanCharClass(caseInsensitive, true);
+                        ScanCharClass(caseInsensitive, scanOnly);
                     }
                 }
                 else
@@ -847,13 +858,8 @@ namespace Peachpie.Library.RegularExpressions
          * a RegexNode for the type of group scanned, or null if the group
          * simply changed options (?cimsx-cimsx) or was a comment (#...).
          */
-        internal RegexNode ScanGroupOpen()
+        private RegexNode ScanGroupOpen()
         {
-            char ch = '\0';
-            int NodeType;
-            char close = '>';
-
-
             // just return a RegexNode if we have:
             // 1. "(" followed by nothing
             // 2. "(x" where x != ?
@@ -891,7 +897,7 @@ namespace Peachpie.Library.RegularExpressions
 
                 string capname = ScanCapname();
 
-                if (CharsRight() > 0 && MoveRightGetChar() == ')')
+                if (CharsRight() > 0 && RightCharMoveRight() == ')')
                 {
                     if (IsCaptureName(capname, out var slot))
                         return new RegexNode(RegexNode.Ref, _options, slot);
@@ -910,7 +916,7 @@ namespace Peachpie.Library.RegularExpressions
                 if (!IsCaptureSlot(pindex))
                     throw MakeException(string.Format(SR.UndefinedSubpattern, pindex.ToString()));
 
-                if (CharsRight() == 0 || MoveRightGetChar() != ')')
+                if (CharsRight() == 0 || RightCharMoveRight() != ')')
                 {
                     goto BreakRecognize;
                 }
@@ -918,30 +924,35 @@ namespace Peachpie.Library.RegularExpressions
                 return new RegexNode(RegexNode.CallSubroutine, _options, pindex);
             }
 
-            for (; ; )
+            while (true)
             {
                 if (CharsRight() == 0)
-                {
                     break;
-                }
 
-                switch (ch = MoveRightGetChar())
+                int NodeType;
+                char close = '>';
+                char ch;
+                switch (ch = RightCharMoveRight())
                 {
                     case ':':
+                        // noncapturing group
                         NodeType = RegexNode.Group;
                         break;
 
                     case '=':
+                        // lookahead assertion
                         _options &= ~(RegexOptions.RightToLeft);
                         NodeType = RegexNode.Require;
                         break;
 
                     case '!':
+                        // negative lookahead assertion
                         _options &= ~(RegexOptions.RightToLeft);
                         NodeType = RegexNode.Prevent;
                         break;
 
                     case '>':
+                        // greedy subexpression
                         NodeType = RegexNode.Greedy;
                         break;
 
@@ -954,12 +965,13 @@ namespace Peachpie.Library.RegularExpressions
                         if (CharsRight() == 0)
                             goto BreakRecognize;
 
-                        switch (ch = MoveRightGetChar())
+                        switch (ch = RightCharMoveRight())
                         {
                             case '=':
                                 if (close == '\'')
                                     goto BreakRecognize;
 
+                                // lookbehind assertion
                                 _options |= RegexOptions.RightToLeft;
                                 NodeType = RegexNode.Require;
                                 break;
@@ -968,6 +980,7 @@ namespace Peachpie.Library.RegularExpressions
                                 if (close == '\'')
                                     goto BreakRecognize;
 
+                                // negative lookbehind assertion
                                 _options |= RegexOptions.RightToLeft;
                                 NodeType = RegexNode.Prevent;
                                 break;
@@ -1014,7 +1027,7 @@ namespace Peachpie.Library.RegularExpressions
 
                                 // grab part after - if any
 
-                                if ((capnum >= 0 || proceed == true) && CharsRight() > 0 && RightChar() == '-')
+                                if ((capnum >= 0 || proceed == true) && CharsRight() > 1 && RightChar() == '-')
                                 {
                                     MoveRight();
                                     ch = RightChar();
@@ -1050,7 +1063,7 @@ namespace Peachpie.Library.RegularExpressions
 
                                 // actually make the node
 
-                                if ((capnum != -1 || uncapnum != -1) && CharsRight() > 0 && MoveRightGetChar() == close)
+                                if ((capnum != -1 || uncapnum != -1) && CharsRight() > 0 && RightCharMoveRight() == close)
                                 {
                                     _autocap++;
                                     return new RegexNode(RegexNode.Capture, _options, capnum, uncapnum);
@@ -1071,7 +1084,7 @@ namespace Peachpie.Library.RegularExpressions
                             if (ch >= '0' && ch <= '9')
                             {
                                 int capnum = ScanDecimal();
-                                if (CharsRight() > 0 && MoveRightGetChar() == ')')
+                                if (CharsRight() > 0 && RightCharMoveRight() == ')')
                                 {
                                     if (IsCaptureSlot(capnum))
                                         return new RegexNode(RegexNode.Testref, _options, capnum);
@@ -1085,7 +1098,7 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 string capname = ScanCapname();
 
-                                if (IsCaptureName(capname, out var slot) && CharsRight() > 0 && MoveRightGetChar() == ')')
+                                if (IsCaptureName(capname, out var slot) && CharsRight() > 0 && RightCharMoveRight() == ')')
                                     return new RegexNode(RegexNode.Testref, _options, slot);
                             }
                         }
@@ -1119,11 +1132,13 @@ namespace Peachpie.Library.RegularExpressions
                         MoveLeft();
 
                         NodeType = RegexNode.Group;
-                        ScanOptions();
+                        // Disallow options in the children of a testgroup node
+                        if (_group.NType != RegexNode.Testgroup)
+                            ScanOptions();
                         if (CharsRight() == 0)
                             goto BreakRecognize;
 
-                        if ((ch = MoveRightGetChar()) == ')')
+                        if ((ch = RightCharMoveRight()) == ')')
                             return null;
 
                         if (ch != ':')
@@ -1144,11 +1159,11 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans whitespace or x-mode comments.
          */
-        internal void ScanBlank()
+        private void ScanBlank()
         {
             if (UseOptionX())
             {
-                for (; ; )
+                while (true)
                 {
                     while (CharsRight() > 0 && IsSpace(RightChar()))
                         MoveRight();
@@ -1176,12 +1191,13 @@ namespace Peachpie.Library.RegularExpressions
             }
             else
             {
-                for (; ; )
+                while (true)
                 {
                     if (CharsRight() < 3 || RightChar(2) != '#' ||
                         RightChar(1) != '?' || RightChar() != '(')
                         return;
 
+                    // skip comment (?# ...)
                     while (CharsRight() > 0 && RightChar() != ')')
                         MoveRight();
                     if (CharsRight() == 0)
@@ -1195,14 +1211,11 @@ namespace Peachpie.Library.RegularExpressions
          * Scans chars following a '\' (not counting the '\'), and returns
          * a RegexNode for the type of atom scanned.
          */
-        internal RegexNode ScanBackslash()
+        private RegexNode ScanBackslash(bool scanOnly)
         {
+            Debug.Assert(CharsRight() > 0, "The current reading position must not be at the end of the pattern");
+
             char ch;
-            RegexCharClass cc;
-
-            if (CharsRight() == 0)
-                throw MakeException(SR.IllegalEndEscape);
-
             switch (ch = RightChar())
             {
                 case 'b':
@@ -1213,40 +1226,54 @@ namespace Peachpie.Library.RegularExpressions
                 case 'z':
                 case 'K':
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     return new RegexNode(TypeFromCode(ch), _options);
 
                 case 'w':
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     if (UseOptionE())
                         return new RegexNode(RegexNode.Set, _options, RegexCharClass.ECMAWordClass);
                     return new RegexNode(RegexNode.Set, _options, RegexCharClass.WordClass);
 
                 case 'W':
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     if (UseOptionE())
                         return new RegexNode(RegexNode.Set, _options, RegexCharClass.NotECMAWordClass);
                     return new RegexNode(RegexNode.Set, _options, RegexCharClass.NotWordClass);
 
                 case 's':
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     if (UseOptionE())
                         return new RegexNode(RegexNode.Set, _options, RegexCharClass.ECMASpaceClass);
                     return new RegexNode(RegexNode.Set, _options, RegexCharClass.SpaceClass);
 
                 case 'S':
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     if (UseOptionE())
                         return new RegexNode(RegexNode.Set, _options, RegexCharClass.NotECMASpaceClass);
                     return new RegexNode(RegexNode.Set, _options, RegexCharClass.NotSpaceClass);
 
                 case 'd':
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     if (UseOptionE())
                         return new RegexNode(RegexNode.Set, _options, RegexCharClass.ECMADigitClass);
                     return new RegexNode(RegexNode.Set, _options, RegexCharClass.DigitClass);
 
                 case 'D':
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     if (UseOptionE())
                         return new RegexNode(RegexNode.Set, _options, RegexCharClass.NotECMADigitClass);
                     return new RegexNode(RegexNode.Set, _options, RegexCharClass.NotDigitClass);
@@ -1254,38 +1281,39 @@ namespace Peachpie.Library.RegularExpressions
                 case 'p':
                 case 'P':
                     MoveRight();
-                    cc = new RegexCharClass();
-                    cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), UseOptionI(), _pattern);
+                    if (scanOnly)
+                        return null;
+                    var cc = new RegexCharClass();
+                    cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), UseOptionI(), _currentPos + _offsetPos);
                     if (UseOptionI())
                         cc.AddLowercase(_culture);
                     return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
 
                 case 'R':   // new line separator, Unicode category `Zl`
                     MoveRight();
+                    if (scanOnly)
+                        return null;
                     cc = new RegexCharClass();
-                    cc.AddCategoryFromName("Zl", false, false, _pattern);
+                    cc.AddCategoryFromName("Zl", false, false, _currentPos + _offsetPos);
                     return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
 
                 default:
-                    return ScanBasicBackslash();
+                    return ScanBasicBackslash(scanOnly);
             }
         }
 
         /*
          * Scans \-style backreferences and character escapes
          */
-        internal RegexNode ScanBasicBackslash()
+        private RegexNode ScanBasicBackslash(bool scanOnly)
         {
             if (CharsRight() == 0)
                 throw MakeException(SR.IllegalEndEscape);
 
-            char ch;
-            bool angled = false;
+            int backpos = Textpos();
             char close = '\0';
-            int backpos;
-
-            backpos = Textpos();
-            ch = RightChar();
+            bool angled = false;
+            char ch = RightChar();
 
             // allow \k<foo> instead of \<foo>, which is now deprecated
 
@@ -1294,7 +1322,7 @@ namespace Peachpie.Library.RegularExpressions
                 if (CharsRight() >= 2)
                 {
                     MoveRight();
-                    ch = MoveRightGetChar();
+                    ch = RightCharMoveRight();
 
                     if (ch == '<' || ch == '\'')
                     {
@@ -1320,14 +1348,16 @@ namespace Peachpie.Library.RegularExpressions
                 ch = RightChar();
             }
 
-            // Try to parse backreference: \<1> or \<cap>
+            // Try to parse backreference: \<1>
 
             if (angled && ch >= '0' && ch <= '9')
             {
                 int capnum = ScanDecimal();
 
-                if (CharsRight() > 0 && MoveRightGetChar() == close)
+                if (CharsRight() > 0 && RightCharMoveRight() == close)
                 {
+                    if (scanOnly)
+                        return null;
                     if (IsCaptureSlot(capnum))
                         return new RegexNode(RegexNode.Ref, _options, capnum);
                     else
@@ -1354,11 +1384,13 @@ namespace Peachpie.Library.RegularExpressions
                         newcapnum = newcapnum * 10 + (int)(ch - '0');
                     }
                     if (capnum >= 0)
-                        return new RegexNode(RegexNode.Ref, _options, capnum);
+                        return scanOnly ? null : new RegexNode(RegexNode.Ref, _options, capnum);
                 }
                 else
                 {
                     int capnum = ScanDecimal();
+                    if (scanOnly)
+                        return null;
                     if (IsCaptureSlot(capnum))
                         return new RegexNode(RegexNode.Ref, _options, capnum);
                     else if (capnum <= 9)
@@ -1366,12 +1398,17 @@ namespace Peachpie.Library.RegularExpressions
                 }
             }
 
+
+            // Try to parse backreference: \<foo>
+
             else if (angled && RegexCharClass.IsWordChar(ch))
             {
                 string capname = ScanCapname();
 
-                if (CharsRight() > 0 && MoveRightGetChar() == close)
+                if (CharsRight() > 0 && RightCharMoveRight() == close)
                 {
+                    if (scanOnly)
+                        return null;
                     if (IsCaptureName(capname, out var slot))
                         return new RegexNode(RegexNode.Ref, _options, slot);
                     else
@@ -1387,7 +1424,7 @@ namespace Peachpie.Library.RegularExpressions
             if (UseOptionI())
                 ch = _culture.TextInfo.ToLower(ch);
 
-            return new RegexNode(RegexNode.One, _options, ch);
+            return scanOnly ? null : new RegexNode(RegexNode.One, _options, ch);
         }
 
         /// <summary>
@@ -1410,13 +1447,13 @@ namespace Peachpie.Library.RegularExpressions
 
             //
             Textto(backpos);
-            return new RegexNode(RegexNode.One, _options, MoveRightGetChar());
+            return new RegexNode(RegexNode.One, _options, RightCharMoveRight());
         }
 
         /*
          * Scans $ patterns recognized within replacement patterns
          */
-        internal RegexNode ScanDollar()
+        private RegexNode ScanDollar()
         {
             if (CharsRight() == 0)
                 return new RegexNode(RegexNode.One, _options, '$');
@@ -1476,7 +1513,7 @@ namespace Peachpie.Library.RegularExpressions
                 else
                 {
                     int capnum = ScanDecimal();
-                    if (!angled || CharsRight() > 0 && MoveRightGetChar() == '}')
+                    if (!angled || CharsRight() > 0 && RightCharMoveRight() == '}')
                     {
                         if (IsCaptureSlot(capnum))
                             return new RegexNode(RegexNode.Ref, _options, capnum);
@@ -1487,7 +1524,7 @@ namespace Peachpie.Library.RegularExpressions
             {
                 string capname = ScanCapname();
 
-                if (CharsRight() > 0 && MoveRightGetChar() == '}')
+                if (CharsRight() > 0 && RightCharMoveRight() == '}')
                 {
                     if (IsCaptureName(capname, out var slot))
                         return new RegexNode(RegexNode.Ref, _options, slot);
@@ -1540,40 +1577,37 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans a capture name: consumes word chars
          */
-        internal string ScanCapname()
+        private string ScanCapname()
         {
             int startpos = Textpos();
 
             while (CharsRight() > 0)
             {
-                if (!RegexCharClass.IsWordChar(MoveRightGetChar()))
+                if (!RegexCharClass.IsWordChar(RightCharMoveRight()))
                 {
                     MoveLeft();
                     break;
                 }
             }
 
-            return _pattern.Substring(startpos, Textpos() - startpos);
+            return _pattern.Slice(startpos, Textpos() - startpos).ToString();
         }
 
 
         /*
          * Scans up to three octal digits (stops before exceeding 0377).
          */
-        internal char ScanOctal()
+        private char ScanOctal()
         {
+            // Consume octal chars only up to 3 digits and value 0377
+            int c = 3;
             int d;
             int i;
-            int c;
-
-            // Consume octal chars only up to 3 digits and value 0377
-
-            c = 3;
 
             if (c > CharsRight())
                 c = CharsRight();
 
-            for (i = 0; c > 0 && (uint)(d = RightChar() - '0') <= 7; c -= 1)
+            for (i = 0; c > 0 && unchecked((uint)(d = RightChar() - '0')) <= 7; c -= 1)
             {
                 MoveRight();
                 i *= 8;
@@ -1592,12 +1626,12 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans any number of decimal digits (pegs value at 2^31-1 if too large)
          */
-        internal int ScanDecimal()
+        private int ScanDecimal()
         {
             int i = 0;
             int d;
 
-            while (CharsRight() > 0 && (uint)(d = (char)(RightChar() - '0')) <= 9)
+            while (CharsRight() > 0 && unchecked((uint)(d = (char)(RightChar() - '0'))) <= 9)
             {
                 MoveRight();
 
@@ -1616,14 +1650,14 @@ namespace Peachpie.Library.RegularExpressions
         /// Parsing starts at opening curly brace and ends after the right curly brace.
         /// </summary>
         /// <returns>Unicode character.</returns>
-        char ScanHex2OrEnclosed()
+        private char ScanHex2OrEnclosed()
         {
             if (CharsRight() >= 2)  // we need at least 2 characters
             {
                 int d;
                 int i = 0;
 
-                var ch = MoveRightGetChar();
+                var ch = RightCharMoveRight();
                 if (ch == '{')  // {FFFFFF}
                 {
                     if (!UseOptionUtf8())
@@ -1635,7 +1669,7 @@ namespace Peachpie.Library.RegularExpressions
                     int c = 0;
                     for (; c < 6 && CharsRight() != 0; c++)
                     {
-                        ch = MoveRightGetChar();
+                        ch = RightCharMoveRight();
                         d = HexDigit(ch);
                         if (d >= 0)
                         {
@@ -1649,7 +1683,7 @@ namespace Peachpie.Library.RegularExpressions
                         }
                     }
 
-                    if (c != 0 && CharsRight() != 0 && MoveRightGetChar() == '}')
+                    if (c != 0 && CharsRight() != 0 && RightCharMoveRight() == '}')
                     {
                         return (char)i;
                     }
@@ -1667,16 +1701,14 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans exactly c hex digits (c=2 for \xFF, c=4 for \uFFFF)
          */
-        internal char ScanHex(int c)
+        private char ScanHex(int c)
         {
-            int i;
+            int i = 0;
             int d;
-
-            i = 0;
 
             if (CharsRight() >= c)
             {
-                for (; c > 0 && ((d = HexDigit(MoveRightGetChar())) >= 0); c -= 1)
+                for (; c > 0 && ((d = HexDigit(RightCharMoveRight())) >= 0); c -= 1)
                 {
                     i *= 0x10;
                     i += d;
@@ -1692,14 +1724,14 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns n <= 0xF for a hex digit.
          */
-        internal static int HexDigit(char ch)
+        private static int HexDigit(char ch)
         {
             int d;
 
             if ((uint)(d = ch - '0') <= 9)
                 return d;
 
-            if ((uint)(d = ch - 'a') <= 5)
+            if (unchecked((uint)(d = ch - 'a')) <= 5)
                 return d + 0xa;
 
             if ((uint)(d = ch - 'A') <= 5)
@@ -1711,21 +1743,19 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Grabs and converts an ASCII control character
          */
-        internal char ScanControl()
+        private char ScanControl()
         {
-            char ch;
-
             if (CharsRight() <= 0)
                 throw MakeException(SR.MissingControl);
 
-            ch = MoveRightGetChar();
+            char ch = RightCharMoveRight();
 
             // \ca interpreted as \cA
 
             if (ch >= 'a' && ch <= 'z')
                 ch = (char)(ch - ('a' - 'A'));
 
-            if ((ch = (char)(ch - '@')) < ' ')
+            if (unchecked(ch = (char)(ch - '@')) < ' ')
                 return ch;
 
             throw MakeException(SR.UnrecognizedControl);
@@ -1734,26 +1764,21 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns true for options allowed only at the top level
          */
-        internal bool IsOnlyTopOption(RegexOptions option)
+        private bool IsOnlyTopOption(RegexOptions options)
         {
-            return (option == RegexOptions.RightToLeft
-                || option == RegexOptions.CultureInvariant
-                || option == RegexOptions.ECMAScript
-            );
+            return options == RegexOptions.RightToLeft ||
+                options == RegexOptions.CultureInvariant ||
+                options == RegexOptions.ECMAScript;
         }
 
         /*
          * Scans cimsx-cimsx option string, stops at the first unrecognized char.
          */
-        internal void ScanOptions()
+        private void ScanOptions()
         {
-            char ch;
-            bool off;
-            RegexOptions option;
-
-            for (off = false; CharsRight() > 0; MoveRight())
+            for (bool off = false; CharsRight() > 0; MoveRight())
             {
-                ch = RightChar();
+                char ch = RightChar();
 
                 if (ch == '-')
                 {
@@ -1765,14 +1790,14 @@ namespace Peachpie.Library.RegularExpressions
                 }
                 else
                 {
-                    option = OptionFromCode(ch);
-                    if (option == 0 || IsOnlyTopOption(option))
+                    RegexOptions options = OptionFromCode(ch);
+                    if (options == 0 || IsOnlyTopOption(options))
                         return;
 
                     if (off)
-                        _options &= ~option;
+                        _options &= ~options;
                     else
-                        _options |= option;
+                        _options |= options;
                 }
             }
         }
@@ -1780,11 +1805,9 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans \ code for escape codes that map to single Unicode chars.
          */
-        internal char ScanCharEscape(bool allowNonSpecial)
+        private char ScanCharEscape(bool allowNonSpecial)
         {
-            char ch;
-
-            ch = MoveRightGetChar();
+            char ch = RightCharMoveRight();
 
             if (ch >= '0' && ch <= '7')
             {
@@ -1832,13 +1855,13 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans X for \p{X} or \P{X}
          */
-        internal string ParseProperty()
+        private string ParseProperty()
         {
             if (CharsRight() < 3)
             {
                 throw MakeException(SR.IncompleteSlashP);
             }
-            char ch = MoveRightGetChar();
+            char ch = RightCharMoveRight();
 
             if (ch != '{')
             {
@@ -1863,16 +1886,16 @@ namespace Peachpie.Library.RegularExpressions
             int startpos = Textpos();
             while (CharsRight() > 0)
             {
-                ch = MoveRightGetChar();
+                ch = RightCharMoveRight();
                 if (!(RegexCharClass.IsWordChar(ch) || ch == '-'))
                 {
                     MoveLeft();
                     break;
                 }
             }
-            string capname = _pattern.Substring(startpos, Textpos() - startpos);
+            string capname = _pattern.Slice(startpos, Textpos() - startpos).ToString();
 
-            if (CharsRight() == 0 || MoveRightGetChar() != '}')
+            if (CharsRight() == 0 || RightCharMoveRight() != '}')
                 throw MakeException(SR.IncompleteSlashP);
 
             return capname;
@@ -1881,33 +1904,23 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns ReNode type for zero-length assertions with a \ code.
          */
-        internal int TypeFromCode(char ch)
-        {
-            switch (ch)
+        private int TypeFromCode(char ch) =>
+            ch switch
             {
-                case 'b':
-                    return UseOptionE() ? RegexNode.ECMABoundary : RegexNode.Boundary;
-                case 'B':
-                    return UseOptionE() ? RegexNode.NonECMABoundary : RegexNode.Nonboundary;
-                case 'A':
-                    return RegexNode.Beginning;
-                case 'G':
-                    return RegexNode.Start;
-                case 'Z':
-                    return RegexNode.EndZ;
-                case 'z':
-                    return RegexNode.End;
-                case 'K':
-                    return RegexNode.ResetMatchStart;
-                default:
-                    return RegexNode.Nothing;
-            }
-        }
+                'b' => UseOptionE() ? RegexNode.ECMABoundary : RegexNode.Boundary,
+                'B' => UseOptionE() ? RegexNode.NonECMABoundary : RegexNode.Nonboundary,
+                'A' => RegexNode.Beginning,
+                'G' => RegexNode.Start,
+                'Z' => RegexNode.EndZ,
+                'z' => RegexNode.End,
+                'K' => RegexNode.ResetMatchStart,
+                _ => RegexNode.Nothing,
+            };
 
         /// <summary>
         /// Returns option bit from single-char (?cimsx) code.
         /// </summary>
-        internal static RegexOptions OptionFromCode(char ch)
+        private static RegexOptions OptionFromCode(char ch)
         {
             switch (ch)
             {
@@ -1919,30 +1932,20 @@ namespace Peachpie.Library.RegularExpressions
             if (ch >= 'A' && ch <= 'Z')
                 ch += (char)('a' - 'A');
 
-            switch (ch)
+            return ch switch
             {
-                case 'i':
-                    return RegexOptions.IgnoreCase;
-                case 'r':
-                    return RegexOptions.RightToLeft;
-                case 'm':
-                    return RegexOptions.Multiline;
-                case 'n':
-                    return RegexOptions.ExplicitCapture;
-                case 's':
-                    return RegexOptions.Singleline;
-                case 'x':
-                    return RegexOptions.IgnorePatternWhitespace;
+                'i' => RegexOptions.IgnoreCase,
+                'r' => RegexOptions.RightToLeft,
+                'm' => RegexOptions.Multiline,
+                'n' => RegexOptions.ExplicitCapture,
+                's' => RegexOptions.Singleline,
+                'x' => RegexOptions.IgnorePatternWhitespace,
 #if DEBUG
-                case 'd':
-                    return RegexOptions.Debug;
+                'd' => RegexOptions.Debug,
 #endif
-                case 'e':
-                    return RegexOptions.ECMAScript;
-
-                default:
-                    return 0;
-            }
+                'e' => RegexOptions.ECMAScript,
+                _ => 0,
+            };
         }
 
         /// <summary>
@@ -1999,10 +2002,8 @@ namespace Peachpie.Library.RegularExpressions
          * a prescanner for deducing the slots used for
          * captures by doing a partial tokenization of the pattern.
          */
-        internal void CountCaptures()
+        private void CountCaptures()
         {
-            char ch;
-
             NoteCaptureSlot(0, 0);
 
             _autocap = 1;
@@ -2010,12 +2011,12 @@ namespace Peachpie.Library.RegularExpressions
             while (CharsRight() > 0)
             {
                 int pos = Textpos();
-                ch = MoveRightGetChar();
+                char ch = RightCharMoveRight();
                 switch (ch)
                 {
                     case '\\':
                         if (CharsRight() > 0)
-                            MoveRight();
+                            ScanBackslash(scanOnly: true);
                         break;
 
                     case '#':
@@ -2027,7 +2028,7 @@ namespace Peachpie.Library.RegularExpressions
                         break;
 
                     case '[':
-                        ScanCharClass(false, true);
+                        ScanCharClass(caseInsensitive: false, scanOnly: true);
                         break;
 
                     case ')':
@@ -2038,6 +2039,7 @@ namespace Peachpie.Library.RegularExpressions
                     case '(':
                         if (CharsRight() >= 2 && RightChar(1) == '#' && RightChar() == '?')
                         {
+                            // we have a comment (?#
                             MoveLeft();
                             ScanBlank();
                         }
@@ -2071,8 +2073,10 @@ namespace Peachpie.Library.RegularExpressions
                                         else
                                         {
                                             NoteCaptureName(ScanCapname(), _autocap);
-                                            NoteCaptureSlot(_autocap++, pos);
+                                            NoteCaptureSlot(_autocap, pos);
                                         }
+
+                                        _autocap++;
                                     }
                                 }
                                 else
@@ -2104,6 +2108,9 @@ namespace Peachpie.Library.RegularExpressions
                             }
                             else
                             {
+                                // Simple (unnamed) capture group.
+                                // Add unnamend parentheses if ExplicitCapture is not set
+                                // and the next parentheses is not ignored.
                                 if (!UseOptionN() && !_ignoreNextParen)
                                     NoteCaptureSlot(_autocap++, pos);
                             }
@@ -2120,7 +2127,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Notes a used capture slot
          */
-        internal void NoteCaptureSlot(int i, int pos)
+        private void NoteCaptureSlot(int i, int pos)
         {
             if (!_caps.ContainsKey(i))
             {
@@ -2131,10 +2138,7 @@ namespace Peachpie.Library.RegularExpressions
 
                 if (_captop <= i)
                 {
-                    if (i == int.MaxValue)
-                        _captop = i;
-                    else
-                        _captop = i + 1;
+                    _captop = i == int.MaxValue ? i : i + 1;
                 }
             }
         }
@@ -2142,7 +2146,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Notes a used capture slot
          */
-        internal void NoteCaptureName(string name, int pos)
+        private void NoteCaptureName(string name, int pos)
         {
             if (_capnames == null)
             {
@@ -2158,19 +2162,9 @@ namespace Peachpie.Library.RegularExpressions
         }
 
         /*
-         * For when all the used captures are known: note them all at once
-         */
-        internal void NoteCaptures(Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames)
-        {
-            _caps = caps;
-            _capsize = capsize;
-            _capnames = capnames;
-        }
-
-        /*
          * Assigns unused slot numbers to the capture names
          */
-        internal void AssignNameSlots()
+        private void AssignNameSlots()
         {
             if (_capnames != null)
             {
@@ -2228,7 +2222,7 @@ namespace Peachpie.Library.RegularExpressions
 
                 for (int i = 0; i < _capcount; i++)
                 {
-                    int j = (_capnumlist == null) ? i : (int)_capnumlist[i];
+                    int j = (_capnumlist == null) ? i : _capnumlist[i];
 
                     if (next == j)
                     {
@@ -2248,7 +2242,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * True if the capture slot was noted
          */
-        internal bool IsCaptureSlot(int i)
+        private bool IsCaptureSlot(int i)
         {
             if (_caps != null)
                 return _caps.ContainsKey(i);
@@ -2259,7 +2253,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Looks up the slot number for a given name
          */
-        internal bool IsCaptureName(string capname, out int slot)
+        private bool IsCaptureName(string capname, out int slot)
         {
             if (_capnames != null && _capnames.TryGetValue(capname, out slot))
             {
@@ -2275,7 +2269,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * True if N option disabling '(' autocapture is on.
          */
-        internal bool UseOptionN()
+        private bool UseOptionN()
         {
             return (_options & RegexOptions.ExplicitCapture) != 0;
         }
@@ -2283,7 +2277,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * True if I option enabling case-insensitivity is on.
          */
-        internal bool UseOptionI()
+        private bool UseOptionI()
         {
             return (_options & RegexOptions.IgnoreCase) != 0;
         }
@@ -2291,7 +2285,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * True if M option altering meaning of $ and ^ is on.
          */
-        internal bool UseOptionM()
+        private bool UseOptionM()
         {
             return (_options & RegexOptions.Multiline) != 0;
         }
@@ -2299,15 +2293,15 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * True if S option altering meaning of . is on.
          */
-        internal bool UseOptionS()
+        private bool UseOptionS()
         {
             return (_options & RegexOptions.Singleline) != 0;
         }
 
         /*
-         * True if x option enabling whitespace/comment mode is on.
+         * True if X option enabling whitespace/comment mode is on.
          */
-        internal bool UseOptionX()
+        private bool UseOptionX()
         {
             return (_options & RegexOptions.IgnorePatternWhitespace) != 0;
         }
@@ -2315,141 +2309,149 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * True if E option enabling ECMAScript behavior is on.
          */
-        internal bool UseOptionE()
+        private bool UseOptionE()
         {
             return (_options & RegexOptions.ECMAScript) != 0;
         }
 
-        internal bool UseOptionUngreedy()
+        private bool UseOptionUngreedy()
         {
             return (_options & RegexOptions.PCRE_UNGREEDY) != 0;
         }
 
-        internal bool UseOptionUtf8()
+        private bool UseOptionUtf8()
         {
             return (_options & RegexOptions.PCRE_UTF8) != 0;
         }
 
-        internal bool UseOptionAnchored()
+        private bool UseOptionAnchored()
         {
             return (_options & RegexOptions.PCRE_ANCHORED) != 0;
         }
 
-        internal bool UseOptionDollarEndOnly()
+        private bool UseOptionDollarEndOnly()
         {
             return (_options & RegexOptions.PCRE_DOLLAR_ENDONLY) != 0;
         }
 
-        internal bool UseOptionExtra()
+        private bool UseOptionExtra()
         {
             return (_options & RegexOptions.PCRE_EXTRA) != 0;
         }
 
-        internal const byte Q = 5;    // quantifier
-        internal const byte S = 4;    // ordinary stopper
-        internal const byte Z = 3;    // ScanBlank stopper
-        internal const byte X = 2;    // whitespace
-        internal const byte E = 1;    // should be escaped
+        private const byte Q = 5;    // quantifier
+        private const byte S = 4;    // ordinary stopper
+        private const byte Z = 3;    // ScanBlank stopper
+        private const byte X = 2;    // whitespace
+        private const byte E = 1;    // should be escaped
 
         /*
          * For categorizing ASCII characters.
         */
-        internal static readonly byte[] _category = new byte[] {
-            // 0 1 2 3 4 5 6 7 8 9 A B C D E F 0 1 2 3 4 5 6 7 8 9 A B C D E F
-               0,0,0,0,0,0,0,0,0,X,X,0,X,X,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            //   ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ?
-               X,0,0,Z,S,0,0,0,S,S,Q,Q,0,0,S,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,Q,
-            // @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \ ] ^ _
-               0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,S,S,0,S,0,
-            // ' a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~
-               0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,Q,S,0,0,0};
+        private static readonly byte[] s_category = new byte[] {
+            // 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+               0, 0, 0, 0, 0, 0, 0, 0, 0, X, X, 0, X, X, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            //    !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /  0  1  2  3  4  5  6  7  8  9  :  ;  <  =  >  ?
+               X, 0, 0, Z, S, 0, 0, 0, S, S, Q, Q, 0, 0, S, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Q,
+            // @  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y  Z  [  \  ]  ^  _
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, S, S, 0, S, 0,
+            // '  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  p  q  r  s  t  u  v  w  x  y  z  {  |  }  ~
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Q, S, 0, 0, 0};
 
         /*
          * Returns true for those characters that terminate a string of ordinary chars.
          */
-        internal static bool IsSpecial(char ch)
+        private static bool IsSpecial(char ch)
         {
-            return (ch <= '|' && _category[ch] >= S);
+            return (ch <= '|' && s_category[ch] >= S);
         }
 
         /*
          * Returns true for those characters that terminate a string of ordinary chars.
          */
-        internal static bool IsStopperX(char ch)
+        private static bool IsStopperX(char ch)
         {
-            return (ch <= '|' && _category[ch] >= X);
+            return (ch <= '|' && s_category[ch] >= X);
         }
 
         /*
          * Returns true for those characters that begin a quantifier.
          */
-        internal static bool IsQuantifier(char ch)
+        private static bool IsQuantifier(char ch)
         {
-            return (ch <= '{' && _category[ch] >= Q);
+            return (ch <= '{' && s_category[ch] >= Q);
         }
 
-        internal bool IsTrueQuantifier()
+        private bool IsTrueQuantifier()
         {
-            int nChars = CharsRight();
-            if (nChars == 0)
-                return false;
+            Debug.Assert(CharsRight() > 0, "The current reading position must not be at the end of the pattern");
+
             int startpos = Textpos();
             char ch = CharAt(startpos);
             if (ch != '{')
-                return ch <= '{' && _category[ch] >= Q;
+                return ch <= '{' && s_category[ch] >= Q;
+
             int pos = startpos;
-            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9') ;
+            int nChars = CharsRight();
+            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9');
+
             if (nChars == 0 || pos - startpos == 1)
                 return false;
+
             if (ch == '}')
                 return true;
+
             if (ch != ',')
                 return false;
-            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9') ;
+
+            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9');
+
             return nChars > 0 && ch == '}';
         }
 
         /*
          * Returns true for whitespace.
          */
-        internal static bool IsSpace(char ch)
+        private static bool IsSpace(char ch)
         {
-            return (ch <= ' ' && _category[ch] == X);
+            return (ch <= ' ' && s_category[ch] == X);
         }
 
         /*
          * Returns true for chars that should be escaped.
          */
-        internal static bool IsMetachar(char ch)
+        private static bool IsMetachar(char ch)
         {
-            return (ch <= '|' && _category[ch] >= E);
+            return (ch <= '|' && s_category[ch] >= E);
         }
 
 
         /*
          * Add a string to the last concatenate.
          */
-        internal void AddConcatenate(int pos, int cch, bool isReplacement)
+        private void AddConcatenate(int pos, int cch, bool isReplacement)
         {
-            RegexNode node;
-
             if (cch == 0)
                 return;
 
+            RegexNode node;
             if (cch > 1)
             {
-                string str = _pattern.Substring(pos, cch);
-
+                string str;
                 if (UseOptionI() && !isReplacement)
                 {
                     // We do the ToLower character by character for consistency.  With surrogate chars, doing
                     // a ToLower on the entire string could actually change the surrogate pair.  This is more correct
                     // linguistically, but since Regex doesn't support surrogates, it's more important to be
                     // consistent.
-                    var sb = new StringBuilder(str.Length);
-                    for (int i = 0; i < str.Length; i++)
-                        sb.Append(_culture.TextInfo.ToLower(str[i]));
+                    var sb = new StringBuilder(cch);
+                    for (int i = 0; i < cch; i++)
+                        sb.Append(_culture.TextInfo.ToLower(_pattern[pos + i]));
                     str = sb.ToString();
+                }
+                else
+                {
+                     str = _pattern.Slice(pos, cch).ToString();
                 }
 
                 node = new RegexNode(RegexNode.Multi, _options, str);
@@ -2470,23 +2472,23 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Push the parser state (in response to an open paren)
          */
-        internal void PushGroup()
+        private void PushGroup()
         {
-            _group._next = _stack;
-            _alternation._next = _group;
-            _concatenation._next = _alternation;
+            _group.Next = _stack;
+            _alternation.Next = _group;
+            _concatenation.Next = _alternation;
             _stack = _concatenation;
         }
 
         /*
          * Remember the pushed state (in response to a ')')
          */
-        internal void PopGroup()
+        private void PopGroup()
         {
             _concatenation = _stack;
-            _alternation = _concatenation._next;
-            _group = _alternation._next;
-            _stack = _group._next;
+            _alternation = _concatenation.Next;
+            _group = _alternation.Next;
+            _stack = _group.Next;
 
             // The first () inside a Testgroup group goes directly to the group
             if (_group.Type() == RegexNode.Testgroup && _group.ChildCount() == 0)
@@ -2502,7 +2504,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * True if the group stack is empty.
          */
-        internal bool EmptyStack()
+        private bool EmptyStack()
         {
             return _stack == null;
         }
@@ -2510,7 +2512,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Start a new round for the parser state (in response to an open paren or string start)
          */
-        internal void StartGroup(RegexNode openGroup)
+        private void StartGroup(RegexNode openGroup)
         {
             _group = openGroup;
             _alternation = new RegexNode(RegexNode.Alternate, _options);
@@ -2520,7 +2522,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Finish the current concatenation (in response to a |)
          */
-        internal void AddAlternate()
+        private void AddAlternate()
         {
             // The | parts inside a Testgroup group go directly to the group
 
@@ -2539,7 +2541,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Finish the current quantifiable (when a quantifier is not found or is not possible)
          */
-        internal void AddConcatenate()
+        private void AddConcatenate()
         {
             // The first (| inside a Testgroup group goes directly to the group
 
@@ -2550,7 +2552,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Finish the current quantifiable (when a quantifier is found)
          */
-        internal void AddConcatenate(bool lazy, bool possessive, int min, int max)
+        private void AddConcatenate(bool lazy, bool possessive, int min, int max)
         {
             Debug.Assert(!(lazy && possessive));
 
@@ -2568,7 +2570,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns the current unit
          */
-        internal RegexNode Unit()
+        private RegexNode Unit()
         {
             return _unit;
         }
@@ -2576,7 +2578,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Sets the current unit to a single char node
          */
-        internal void AddUnitOne(char ch)
+        private void AddUnitOne(char ch)
         {
             if (UseOptionI())
                 ch = _culture.TextInfo.ToLower(ch);
@@ -2587,7 +2589,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Sets the current unit to a single inverse-char node
          */
-        internal void AddUnitNotone(char ch)
+        private void AddUnitNotone(char ch)
         {
             if (UseOptionI())
                 ch = _culture.TextInfo.ToLower(ch);
@@ -2598,7 +2600,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Sets the current unit to a single set node
          */
-        internal void AddUnitSet(string cc)
+        private void AddUnitSet(string cc)
         {
             _unit = new RegexNode(RegexNode.Set, _options, cc);
         }
@@ -2606,7 +2608,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Sets the current unit to a subtree
          */
-        internal void AddUnitNode(RegexNode node)
+        private void AddUnitNode(RegexNode node)
         {
             _unit = node;
         }
@@ -2614,7 +2616,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Sets the current unit to an assertion of the specified type
          */
-        internal void AddUnitType(int type)
+        private void AddUnitType(int type)
         {
             _unit = new RegexNode(type, _options);
         }
@@ -2622,7 +2624,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Finish the current group (in response to a ')' or end)
          */
-        internal void AddGroup()
+        private void AddGroup()
         {
             if (_group.Type() == RegexNode.Testgroup || _group.Type() == RegexNode.Testref)
             {
@@ -2643,34 +2645,33 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Saves options on a stack.
          */
-        internal void PushOptions()
+        private void PushOptions()
         {
-            _optionsStack.Add(_options);
+            _optionsStack.Append(_options);
         }
 
         /*
          * Recalls options from the stack.
          */
-        internal void PopOptions()
+        private void PopOptions()
         {
-            _options = _optionsStack[_optionsStack.Count - 1];
-            _optionsStack.RemoveAt(_optionsStack.Count - 1);
+            _options = _optionsStack.Pop();
         }
 
         /*
          * True if options stack is empty.
          */
-        internal bool EmptyOptionsStack()
+        private bool EmptyOptionsStack()
         {
-            return (_optionsStack.Count == 0);
+            return _optionsStack.Length == 0;
         }
 
         /*
-         * Pops the option stack, but keeps the current options unchanged.
+         * Pops the options stack, but keeps the current options unchanged.
          */
-        internal void PopKeepOptions()
+        private void PopKeepOptions()
         {
-            _optionsStack.RemoveAt(_optionsStack.Count - 1);
+            _optionsStack.Length--;
         }
 
         /*
@@ -2684,7 +2685,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns the current parsing position.
          */
-        internal int Textpos()
+        private int Textpos()
         {
             return _currentPos;
         }
@@ -2692,7 +2693,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Zaps to a specific parsing position.
          */
-        internal void Textto(int pos)
+        private void Textto(int pos)
         {
             _currentPos = pos;
         }
@@ -2700,7 +2701,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns the char at the right of the current parsing position and advances to the right.
          */
-        internal char MoveRightGetChar()
+        private char RightCharMoveRight()
         {
             return _pattern[_currentPos++];
         }
@@ -2708,12 +2709,12 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Moves the current position to the right.
          */
-        internal void MoveRight()
+        private void MoveRight()
         {
             MoveRight(1);
         }
 
-        internal void MoveRight(int i)
+        private void MoveRight(int i)
         {
             _currentPos += i;
         }
@@ -2721,7 +2722,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Moves the current parsing position one to the left.
          */
-        internal void MoveLeft()
+        private void MoveLeft()
         {
             --_currentPos;
         }
@@ -2729,7 +2730,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns the char left of the current parsing position.
          */
-        internal char CharAt(int i)
+        private char CharAt(int i)
         {
             return _pattern[i];
         }
@@ -2745,7 +2746,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Returns the char i chars right of the current parsing position.
          */
-        internal char RightChar(int i)
+        private char RightChar(int i)
         {
             return _pattern[_currentPos + i];
         }
@@ -2753,7 +2754,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Number of characters to the right of the current parsing position.
          */
-        internal int CharsRight()
+        private int CharsRight()
         {
             return _pattern.Length - _currentPos;
         }

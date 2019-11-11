@@ -5,43 +5,42 @@
 // RegexTree is just a wrapper for a node tree with some
 // global information attached.
 
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Peachpie.Library.RegularExpressions
 {
     internal sealed class RegexTree
     {
-        internal RegexTree(RegexNode root, Dictionary<int, int> caps, int[] capnumlist, int captop, Dictionary<string, int> capnames, string[] capslist, RegexOptions opts)
-        {
-            _root = root;
-            _caps = caps;
-            _capnumlist = capnumlist;
-            _capnames = capnames;
-            _capslist = capslist;
-            _captop = captop;
-            _options = opts;
-        }
+        public readonly RegexNode Root;
+        public readonly Dictionary<int, int> Caps;
+        public readonly int[] CapNumList;
+        public readonly int CapTop;
+        public readonly Dictionary<string, int> CapNames;
+        public readonly string[] CapsList;
+        public readonly RegexOptions Options;
 
-        internal readonly RegexNode _root;
-        internal readonly Dictionary<int, int> _caps;
-        internal readonly int[] _capnumlist;
-        internal readonly Dictionary<string, int> _capnames;
-        internal readonly string[] _capslist;
-        internal readonly RegexOptions _options;
-        internal readonly int _captop;
+        internal RegexTree(RegexNode root, Dictionary<int, int> caps, int[] capNumList, int capTop, Dictionary<string, int> capNames, string[] capsList, RegexOptions options)
+        {
+            Root = root;
+            Caps = caps;
+            CapNumList = capNumList;
+            CapTop = capTop;
+            CapNames = capNames;
+            CapsList = capsList;
+            Options = options;
+        }
 
 #if DEBUG
-        internal void Dump()
+        public void Dump()
         {
-            _root.Dump();
+            Root.Dump();
         }
 
-        internal bool Debug
+        public bool Debug
         {
             get
             {
-                return (_options & RegexOptions.Debug) != 0;
+                return (Options & RegexOptions.Debug) != 0;
             }
         }
 #endif

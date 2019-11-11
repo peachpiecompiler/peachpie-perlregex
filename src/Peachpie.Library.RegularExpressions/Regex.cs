@@ -88,7 +88,7 @@ namespace Peachpie.Library.RegularExpressions
 
 
         internal ExclusiveReference _runnerref;             // cached runner
-        internal SharedReference _replref;                  // cached parsed replacement pattern
+        internal WeakReference<RegexReplacement> _replref;  // cached parsed replacement pattern
         internal RegexCode _code;                           // if interpreted, this is the code for RegexInterpreter
         internal bool _refsInitialized = false;
 
@@ -125,6 +125,8 @@ namespace Peachpie.Library.RegularExpressions
         private Regex(string pattern, RegexOptions options, TimeSpan matchTimeout, bool useCache)
         {
             // validate parameters:
+            if (pattern == null)
+                throw new ArgumentNullException(nameof(pattern));
             if (options < RegexOptions.None || (((int)options) >> MaxOptionShift) != 0)
                 throw new ArgumentOutOfRangeException(nameof(options));
             if ((options & RegexOptions.ECMAScript) != 0
@@ -140,7 +142,7 @@ namespace Peachpie.Library.RegularExpressions
 
             ValidateMatchTimeout(matchTimeout);
 
-            this.pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
+            this.pattern = pattern;
             this.roptions = options;
 
             // Try to look up this regex in the cache.  We do this regardless of whether useCache is true since there's
@@ -156,8 +158,8 @@ namespace Peachpie.Library.RegularExpressions
                 var tree = RegexParser.Parse(pattern, roptions);
 
                 // Extract the relevant information
-                capnames = tree._capnames;
-                capslist = tree._capslist;
+                capnames = tree.CapNames;
+                capslist = tree.CapsList;
                 _code = RegexWriter.Write(tree);
                 caps = _code._caps;
                 capsize = _code._capsize;
@@ -656,12 +658,34 @@ namespace Peachpie.Library.RegularExpressions
         /// <paramref name="replacement"/> pattern, starting at the first character in the
         /// input string.
         /// </summary>
+        public string Replace(string input, string replacement, int count)
+        {
+            long replacements = 0;
+            return Replace(input, replacement, count, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the
+        /// <paramref name="replacement"/> pattern, starting at the first character in the
+        /// input string.
+        /// </summary>
         public string Replace(string input, string replacement, int count, ref long replacements)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
             return Replace(input, replacement, count, UseOptionR() ? input.Length : 0, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the
+        /// <paramref name="replacement"/> pattern, starting at the character position
+        /// <paramref name="startat"/>.
+        /// </summary>
+        public string Replace(string input, string replacement, int count, int startat)
+        {
+            long replacements = 0;
+            return Replace(input, replacement, count, startat, ref replacements);
         }
 
         /// <summary>
@@ -677,14 +701,8 @@ namespace Peachpie.Library.RegularExpressions
             if (replacement == null)
                 throw new ArgumentNullException(nameof(replacement));
 
-            // a little code to grab a cached parsed replacement object
-            RegexReplacement repl = (RegexReplacement)_replref.Get();
-
-            if (repl == null || !repl.Pattern.Equals(replacement))
-            {
-                repl = RegexParser.ParseReplacement(replacement, caps, capsize, capnames, roptions);
-                _replref.Cache(repl);
-            }
+            // Gets the weakly cached replacement helper or creates one if there isn't one already.
+            RegexReplacement repl = RegexReplacement.GetOrCreate(_replref, replacement, caps, capsize, capnames, roptions);
 
             return repl.Replace(this, input, count, startat, ref replacements);
         }
@@ -730,12 +748,33 @@ namespace Peachpie.Library.RegularExpressions
         /// Replaces all occurrences of the previously defined pattern with the recent
         /// replacement pattern, starting at the first character position.
         /// </summary>
+        public string Replace(string input, MatchEvaluator evaluator, int count)
+        {
+            long replacements = 0;
+            return Replace(input, evaluator, count, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the recent
+        /// replacement pattern, starting at the first character position.
+        /// </summary>
         public string Replace(string input, MatchEvaluator evaluator, int count, ref long replacements)
         {
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
             return Replace(input, evaluator, count, UseOptionR() ? input.Length : 0, ref replacements);
+        }
+
+        /// <summary>
+        /// Replaces all occurrences of the previously defined pattern with the recent
+        /// replacement pattern, starting at the character position
+        /// <paramref name="startat"/>.
+        /// </summary>
+        public string Replace(string input, MatchEvaluator evaluator, int count, int startat)
+        {
+            long replacements = 0;
+            return Replace(input, evaluator, count, startat, ref replacements);
         }
 
         /// <summary>
@@ -816,7 +855,7 @@ namespace Peachpie.Library.RegularExpressions
 
             _refsInitialized = true;
             _runnerref = new ExclusiveReference();
-            _replref = new SharedReference();
+            _replref = new WeakReference<RegexReplacement>(null);
         }
 
         /*
@@ -1021,10 +1060,10 @@ namespace Peachpie.Library.RegularExpressions
         internal string[] _capslist;
         internal int _capsize;
         internal ExclusiveReference _runnerref;
-        internal SharedReference _replref;
+        internal WeakReference<RegexReplacement> _replref;
         internal uint _usedstamp;
 
-        internal CachedCodeEntry(Dictionary<string, int> capnames, string[] capslist, RegexCode code, Dictionary<int, int> caps, int capsize, ExclusiveReference runner, SharedReference repl)
+        internal CachedCodeEntry(Dictionary<string, int> capnames, string[] capslist, RegexCode code, Dictionary<int, int> caps, int capsize, ExclusiveReference runner, WeakReference<RegexReplacement> repl)
         {
             _capnames = capnames;
             _capslist = capslist;
