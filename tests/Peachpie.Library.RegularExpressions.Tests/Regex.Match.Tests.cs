@@ -298,7 +298,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
             yield return new object[] { @"/[a-[a-f]]/", "abcdefghijklmnopqrstuvwxyz", RegexOptions.None, 0, 26, false, string.Empty };
 
             // \c
-            yield return new object[] { SkippedPattern + @"/(cat)(\c[*)(dog)/", "asdlkcat\u00FFdogiwod", RegexOptions.None, 0, 15, false, string.Empty };   // \c[* doesn't work due to preliminary capture scan
+            yield return new object[] { @"/(cat)(\c[*)(dog)/", "asdlkcat\u00FFdogiwod", RegexOptions.None, 0, 15, false, string.Empty };   // \c[* doesn't work due to preliminary capture scan
 
             // Surrogate pairs splitted up into UTF-16 code units.
             yield return new object[] { @"/(\uD82F[\uDCA0-\uDCA3])/", "\uD82F\uDCA2", RegexOptions.CultureInvariant, 0, 2, true, "\uD82F\uDCA2" };
@@ -309,8 +309,6 @@ namespace Peachpie.Library.RegularExpressions.Tests
         [MemberData(nameof(RegexCompilationHelper.TransformRegexOptions), nameof(Match_Basic_TestData), 2, MemberType = typeof(RegexCompilationHelper))]
         public void Match(string pattern, string input, RegexOptions options, int beginning, int length, bool expectedSuccess, string expectedValue)
         {
-            SkipIfMarked(ref pattern);
-
             bool isDefaultStart = RegexHelpers.IsDefaultStart(input, options, beginning);
             bool isDefaultCount = RegexHelpers.IsDefaultCount(input, options, length);
             if (options == RegexOptions.None)
@@ -775,14 +773,12 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
         [SkippableTheory]
         [InlineData(@"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${time}", "16:00")]
-        [InlineData(SkippedPatternNamedGroup + @"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${1}", "08")]
+        [InlineData(@"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${1}", "08")]
         [InlineData(@"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${2}", "10")]
         [InlineData(@"#(?<1>\d{1,2})/(?<2>\d{1,2})/(?<3>\d{2,4})\s(?<time>\S+)#", "08/10/99 16:00", "${3}", "99")]
         [InlineData("/abc/", "abc", "abc", "abc")]
         public void Result(string pattern, string input, string replacement, string expected)
         {
-            SkipIfMarked(ref pattern);
-
             Assert.Equal(expected, new Regex(pattern).Match(input).Result(replacement));
         }
 
