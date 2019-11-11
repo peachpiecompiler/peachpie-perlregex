@@ -44,7 +44,7 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
         public RegexRedux.Result CoreFx() => RegexRedux.RunCoreFx(_sequences);
 
         [Benchmark]
-        public RegexRedux.Result Peachpie() => RegexRedux.RunPeachpie(_sequences);
+        public RegexRedux.Result Pcre() => RegexRedux.RunPcre(_sequences);
     }
 
     [Config(typeof(Config))]
@@ -82,7 +82,7 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
         public RegexRedux.Result CoreFx() => RegexRedux.RunCoreFx(_sequences);
 
         [Benchmark]
-        public RegexRedux.Result Peachpie() => RegexRedux.RunPeachpie(_sequences);
+        public RegexRedux.Result Pcre() => RegexRedux.RunPcre(_sequences);
     }
 
     class Program

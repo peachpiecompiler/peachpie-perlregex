@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using CoreFxRegex = System.Text.RegularExpressions;
-using PeachpieRegex = Peachpie.Library.RegularExpressions;
+using PcreRegex = Peachpie.Library.RegularExpressions;
 
 namespace Peachpie.Library.RegularExpressions.Benchmarks
 {
@@ -15,7 +15,7 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
     /// <remarks>
     /// See https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html#regexredux.
     /// 
-    /// It can be run both using Peachpie PCRE or standard CoreFX regular expressions. Note that the PCRE expressions
+    /// It can be run both using PCRE or standard CoreFX regular expressions. Note that the PCRE expressions
     /// need to be enclosed in delimiters (e.g. "/expr/") to work.
     /// </remarks>
     public static class RegexRedux
@@ -148,7 +148,7 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
             }
         }
 
-        private sealed class PeachpieRedux : ReduxBase
+        private sealed class PcreRedux : ReduxBase
         {
             #region PCRE patterns
 
@@ -166,18 +166,18 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
 
             #endregion
 
-            private PeachpieRedux() { }
+            private PcreRedux() { }
 
-            public static PeachpieRedux Instance { get; } = new PeachpieRedux();
+            public static PcreRedux Instance { get; } = new PcreRedux();
 
             protected override string Clean(string sequences)
             {
-                return PeachpieRegex.Regex.Replace(sequences, PcreCleanupPattern, "");
+                return PcreRegex.Regex.Replace(sequences, PcreCleanupPattern, "");
             }
 
             protected override int Count(int countPatternIndex, string sequences)
             {
-                var r = new PeachpieRegex.Regex(PcreCountPatterns[countPatternIndex]);
+                var r = new PcreRegex.Regex(PcreCountPatterns[countPatternIndex]);
                 int count = 0;
                 for (var m = r.Match(sequences); m.Success; m = m.NextMatch())
                 {
@@ -190,12 +190,12 @@ namespace Peachpie.Library.RegularExpressions.Benchmarks
             protected override string Replace(int replacePatternIndex, string sequences)
             {
                 var record = PcreReplacementPatterns[replacePatternIndex];
-                return PeachpieRegex.Regex.Replace(sequences, record.Pattern, record.Replacement);
+                return PcreRegex.Regex.Replace(sequences, record.Pattern, record.Replacement);
             }
         }
 
         public static Result RunCoreFx(string sequences) => CoreFxRedux.Instance.Run(sequences);
 
-        public static Result RunPeachpie(string sequences) => PeachpieRedux.Instance.Run(sequences);
+        public static Result RunPcre(string sequences) => PcreRedux.Instance.Run(sequences);
     }
 }
