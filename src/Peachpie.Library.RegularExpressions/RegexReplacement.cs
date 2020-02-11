@@ -310,7 +310,7 @@ namespace Peachpie.Library.RegularExpressions
                         prevat = match.Index + match.Length;
                         string result = evaluator(match);
                         if (!string.IsNullOrEmpty(result))
-                            vsb.Append(evaluator(match));
+                            vsb.Append(result);
 
                         ++replacements;
 

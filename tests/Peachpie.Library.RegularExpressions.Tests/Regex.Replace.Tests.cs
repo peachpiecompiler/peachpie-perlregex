@@ -299,6 +299,16 @@ namespace Peachpie.Library.RegularExpressions.Tests
             AssertExtensions.Throws<ArgumentOutOfRangeException>("startat", () => new Regex("/pattern/").Replace("input", new MatchEvaluator(MatchEvaluator1), 0, 6));
         }
 
+        [Fact]
+        public void Replace_MatchEvaluatorCalledOnce()
+        {
+            int count = 0;
+
+            Regex.Replace("post/{id}", @"/\{.*?\}/", match => { count++; return "1"; });
+
+            Assert.Equal(1, count);
+        }
+
         public static string MatchEvaluator1(Match match) => match.Value.ToLower() == "big" ? "Huge": "Tiny";
 
         public static string MatchEvaluator2(Match match) => "SUCCESS";
