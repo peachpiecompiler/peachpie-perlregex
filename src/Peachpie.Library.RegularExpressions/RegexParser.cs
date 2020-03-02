@@ -146,9 +146,10 @@ namespace Peachpie.Library.RegularExpressions
 
                 if (i < end)
                 {
-                    if (re[i] == start_delimiter)
+                    offset = i + 1; // after the opening delimiter
+
+                    if (re[i] == start_delimiter && offset < end)
                     {
-                        offset = i + 1;
                         return re.AsSpan(offset, end - offset - 1);
                     }
                     else

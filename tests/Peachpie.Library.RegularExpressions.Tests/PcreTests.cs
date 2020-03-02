@@ -35,6 +35,13 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
+        public void TestParseException()
+        {
+            Assert.Throws<RegexParseException>(() => match("$", "something"));
+            Assert.Throws<RegexParseException>(() => match("/,", "something"));
+        }
+
+        [Fact]
         public void TestSubRoutines()
         {
             match(@"/([abc])(?1)(?1)/", "abcd");
