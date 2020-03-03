@@ -54,6 +54,12 @@ namespace Peachpie.Library.RegularExpressions.Tests
             match(@"/\b(([a-z])(?1)(?2)|[a-z])\b/", "none");
             match(@"/^Name:\ (.*) Born:\ ((?:3[01]|[12][0-9]|[1-9])-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(?:19|20)[0-9][0-9]) Admitted:\ (?2) Released:\ (?2)$/",
               "Name: John Doe Born: 17-Jan-1964 Admitted: 30-Jul-2013 Released: 3-Aug-2013");
+
+            Assert.True(match(@"/(x|y)(?-1)/", "xy").Success);
+            Assert.True(match(@"/(?<first>x|y)(?-1)/", "xy").Success);
+            Assert.False(match(@"/(?<first>x|y)(?-1)/", "xz").Success);
+            Assert.True(match(@"/(?<first>x|y)(?-1)(?+1)(y|z)(?-2)/", "xyyyy").Success);
+            Assert.False(match(@"/(?<first>x|y)(?-1)(?+1)(y|z)(?-2)/", "xyyyz").Success);
         }
 
         [Fact]

@@ -50,6 +50,8 @@ namespace Peachpie.Library.RegularExpressions
         private readonly Dictionary<int, int> _caps;
         private Dictionary<string, int> _capnames;
 
+        private Dictionary<int, int> _lazyCapsReverse;
+
         private int[] _capnumlist;
         private List<string> _capnamelist;
 
@@ -69,6 +71,7 @@ namespace Peachpie.Library.RegularExpressions
             _caps = caps;
             _capsize = capsize;
             _capnames = capnames;
+            _lazyCapsReverse = default;
 
             _optionsStack = new ValueListBuilder<RegexOptions>(optionSpan);
             _stack = default;
@@ -910,7 +913,7 @@ namespace Peachpie.Library.RegularExpressions
                     throw MakeException(SR.MalformedNameRef);
                 }
             }
-            else if (CharsRight() >= 1 && char.IsNumber(RightChar()))
+            else if (CharsRight() >= 1 && char.IsNumber(RightChar()))   // (?n) // Subroutine call
             {
                 var pindex = ScanDecimal();
 
@@ -923,6 +926,40 @@ namespace Peachpie.Library.RegularExpressions
                 }
 
                 return new RegexNode(RegexNode.CallSubroutine, _options, pindex);
+            }
+            else if (CharsRight() >= 2 && (RightChar() == '-' || RightChar() == '+') && char.IsNumber(RightChar(1)))    // (?+n) or (?-n) // Relative subroutine call
+            {
+                int step = (RightChar() == '+') ? 1 : -1;
+
+                MoveRight();
+                int relativeIndex = step * ScanDecimal();
+
+                // Find the group in distance of relativeIndex places and direction of step (see https://www.regular-expressions.info/refrecurse.html)
+                EnsureCapsReverse();
+                int? groupIndex = null;
+                int distance = 0;
+                for (int scanPos = Textpos(); scanPos >= 0 && scanPos < _pattern.Length; scanPos += step)
+                {
+                    if (_pattern[scanPos] == '(' && _lazyCapsReverse.TryGetValue(scanPos, out int scanIndex))
+                    {
+                        distance += step;
+                        if (distance == relativeIndex)
+                        {
+                            groupIndex = scanIndex;
+                            break;
+                        }
+                    }
+                }
+
+                if (!groupIndex.HasValue)
+                    throw MakeException(string.Format(SR.UndefinedSubpattern, relativeIndex.ToString()));
+
+                if (CharsRight() == 0 || RightCharMoveRight() != ')')
+                {
+                    goto BreakRecognize;
+                }
+
+                return new RegexNode(RegexNode.CallSubroutine, _options, groupIndex.Value);
             }
 
             while (true)
@@ -2264,6 +2301,21 @@ namespace Peachpie.Library.RegularExpressions
             {
                 slot = -1;
                 return false;
+            }
+        }
+
+        private void EnsureCapsReverse()
+        {
+            if (_lazyCapsReverse == null)
+            {
+                _lazyCapsReverse = new Dictionary<int, int>(_caps.Count);
+                foreach (var kvp in _caps)
+                {
+                    if (kvp.Key == 0)   // Skip the implicit capture group enclosing the whole expression
+                        continue;
+
+                    _lazyCapsReverse.Add(kvp.Value, kvp.Key);
+                }
             }
         }
 
