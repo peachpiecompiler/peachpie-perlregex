@@ -514,6 +514,7 @@ namespace Peachpie.Library.RegularExpressions
                 case RegexNode.EndZ:
                 case RegexNode.End:
                 case RegexNode.ResetMatchStart:
+                case RegexNode.BacktrackingVerb:
                     PushFC(new RegexFC(true));
                     break;
 

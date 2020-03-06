@@ -214,6 +214,15 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid, unsupported or ill-formed backtracking verb &apos;{0}&apos;..
+        /// </summary>
+        internal static string InvalidBacktrackingVerb {
+            get {
+                return ResourceManager.GetString("InvalidBacktrackingVerb", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Argument {0} cannot be zero-length..
         /// </summary>
         internal static string InvalidEmptyArgument {

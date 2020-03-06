@@ -11,6 +11,7 @@
 // ScanBlank() calls are just kind of duct-taped in.
 
 using Peachpie.Library.RegularExpressions.Resources;
+using Peachpie.Library.RegularExpressions.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -433,7 +434,9 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 PopKeepOptions();
                             }
-                            else if (grouper.Type() == RegexNode.Ref || grouper.Type() == RegexNode.CallSubroutine)
+                            else if (grouper.Type() == RegexNode.Ref ||
+                                grouper.Type() == RegexNode.CallSubroutine ||
+                                grouper.Type() == RegexNode.BacktrackingVerb)
                             {
                                 PopKeepOptions();
                                 AddUnitNode(grouper);
@@ -866,9 +869,9 @@ namespace Peachpie.Library.RegularExpressions
         {
             // just return a RegexNode if we have:
             // 1. "(" followed by nothing
-            // 2. "(x" where x != ?
+            // 2. "(x" where x != ? and x != *
             // 3. "(?)"
-            if (CharsRight() == 0 || RightChar() != '?' || (RightChar() == '?' && (CharsRight() > 1 && RightChar(1) == ')')))
+            if (CharsRight() == 0 || (RightChar() != '?' && RightChar() != '*') || (RightChar() == '?' && (CharsRight() > 1 && RightChar(1) == ')')))
             {
                 if (UseOptionN() || _ignoreNextParen)
                 {
@@ -877,6 +880,14 @@ namespace Peachpie.Library.RegularExpressions
                 }
                 else
                     return new RegexNode(RegexNode.Capture, _options, _autocap++, -1);
+            }
+
+            // Backtracking control verbs: (*THEN), (*SKIP), ...
+            if (CharsRight() >= 1 && RightChar() == '*')
+            {
+                MoveRight();
+                int verbCode = ScanBacktrackingVerb();
+                return new RegexNode(RegexNode.BacktrackingVerb, _options, verbCode);
             }
 
             MoveRight();
@@ -1192,6 +1203,43 @@ namespace Peachpie.Library.RegularExpressions
             // break Recognize comes here
 
             throw MakeException(SR.UnrecognizedGrouping);
+        }
+
+        /// <summary>
+        /// Scans the backtracking verb (e.g. (*FAIL), (*SKIP)) not counting the leading "(*".
+        /// Returns its RegexCode or throws a parse exception if invalid.
+        /// </summary>
+        private int ScanBacktrackingVerb()
+        {
+            int startPos = Textpos();
+
+            // Scan the verb
+            while (CharsRight() > 0 && char.IsUpper(RightChar()))
+                MoveRight();
+            var verbSpan = _pattern.Slice(startPos, Textpos() - startPos);
+
+            // Scan the closing ')'
+            if (CharsRight() == 0 || RightChar() != ')')
+                throw MakeException(string.Format(SR.InvalidBacktrackingVerb, verbSpan.ToString()));
+            MoveRight();
+
+            // TODO: Scan also the tag, e.g. (*MARK:some_tag)
+
+            // Find the right verb
+            if (StringExtensions.Equals(verbSpan, "ACCEPT"))
+                return RegexCode.AcceptVerb;
+            else if (StringExtensions.Equals(verbSpan, "FAIL") || StringExtensions.Equals(verbSpan, "F"))
+                return RegexCode.FailVerb;
+            else if (StringExtensions.Equals(verbSpan, "COMMIT"))
+                return RegexCode.CommitVerb;
+            else if (StringExtensions.Equals(verbSpan, "PRUNE"))
+                return RegexCode.PruneVerb;
+            else if (StringExtensions.Equals(verbSpan, "SKIP"))
+                return RegexCode.SkipVerb;
+            else if (StringExtensions.Equals(verbSpan, "THEN"))
+                return RegexCode.ThenVerb;
+            else
+                throw MakeException(string.Format(SR.InvalidBacktrackingVerb, verbSpan.ToString()));
         }
 
         /*
@@ -2143,6 +2191,11 @@ namespace Peachpie.Library.RegularExpressions
                                         }
                                     }
                                 }
+                            }
+                            else if (CharsRight() > 0 && RightChar() == '*')
+                            {
+                                // Backtracking control verb such as (*SKIP) is not a capture group
+                                break;
                             }
                             else
                             {

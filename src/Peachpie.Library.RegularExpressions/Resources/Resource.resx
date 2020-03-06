@@ -297,4 +297,7 @@
   <data name="UndefinedSubpattern" xml:space="preserve">
     <value>Reference to undefined subpattern {0}.</value>
   </data>
+  <data name="InvalidBacktrackingVerb" xml:space="preserve">
+    <value>Invalid, unsupported or ill-formed backtracking verb '{0}'.</value>
+  </data>
 </root>

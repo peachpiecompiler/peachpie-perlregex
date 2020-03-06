@@ -81,6 +81,7 @@ namespace Peachpie.Library.RegularExpressions
 
         internal const int ResetMatchStart = RegexCode.ResetMatchStart; //          \K
         internal const int CallSubroutine = RegexCode.CallSubroutine;   // m        (?m)
+        internal const int BacktrackingVerb = RegexCode.AcceptVerb;     // m        (*ACCEPT), (*SKIP), (*FAIL), ...
 
         // Interior nodes do not correspond to primitive operations, but
         // control structures compositing other operations
@@ -585,7 +586,7 @@ namespace Peachpie.Library.RegularExpressions
             "Capture", "Group", "Require", "Prevent", "Greedy",
             "Testref", "Testgroup",
             null, null, null, null, null, null, null, null,
-            "ResetMatchStart", "CallSubroutine"};
+            "ResetMatchStart", "CallSubroutine", "BacktrackingVerb"};
 
         private string Description()
         {

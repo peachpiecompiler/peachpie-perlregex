@@ -89,6 +89,13 @@ namespace Peachpie.Library.RegularExpressions
         internal const int ResetMatchStart = 43;    // back                     \K
         internal const int CallSubroutine = 44;     // back                     (?n)
 
+        internal const int AcceptVerb = 45;         //                          (*ACCEPT)
+        internal const int FailVerb = 46;           //                          (*FAIL), (*F)
+        internal const int CommitVerb = 47;         // back                     (*COMMIT)
+        internal const int PruneVerb = 48;          // back                     (*PRUNE)
+        internal const int SkipVerb = 49;           // back                     (*SKIP)
+        internal const int ThenVerb = 50;           // back                     (*THEN)
+
         // Modifiers for alternate modes
         internal const int Mask = 63;   // Mask to get unmodified ordinary operator
         internal const int Rtl = 64;    // bit to indicate that we're reverse scanning.
@@ -158,6 +165,10 @@ namespace Peachpie.Library.RegularExpressions
                 case Goto:
                 case ResetMatchStart:
                 case CallSubroutine:
+                case CommitVerb:
+                case PruneVerb:
+                case SkipVerb:
+                case ThenVerb:
                     return true;
 
                 default:
@@ -191,6 +202,12 @@ namespace Peachpie.Library.RegularExpressions
                 case Forejump:
                 case Stop:
                 case ResetMatchStart:
+                case AcceptVerb:
+                case FailVerb:
+                case CommitVerb:
+                case PruneVerb:
+                case SkipVerb:
+                case ThenVerb:
                     return 1;
 
                 case One:
@@ -243,7 +260,8 @@ namespace Peachpie.Library.RegularExpressions
             "Setjump", "Backjump", "Forejump", "Testref", "Goto",
             "Prune", "Stop",
             "ECMABoundary", "NonECMABoundary",
-            "ResetMatchStart",
+            "ResetMatchStart", "CallSubroutine",
+            "AcceptVerb", "FailVerb", "CommitVerb", "PruneVerb", "SkipVerb", "ThenVerb",
         };
 
         internal static string OperatorDescription(int Opcode)

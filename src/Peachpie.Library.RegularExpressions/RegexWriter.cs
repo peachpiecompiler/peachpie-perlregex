@@ -509,6 +509,10 @@ namespace Peachpie.Library.RegularExpressions
                     Emit(RegexCode.CallSubroutine, MapCapnum(node.M));
                     break;
 
+                case RegexNode.BacktrackingVerb:
+                    Emit(node.M);
+                    break;
+
                 default:
                     throw new ArgumentException(string.Format(SR.UnexpectedOpcode, nodetype.ToString()));
             }
