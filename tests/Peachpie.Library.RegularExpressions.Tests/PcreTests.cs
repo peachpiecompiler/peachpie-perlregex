@@ -106,5 +106,13 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.Throws<RegexParseException>(() => match(@"/\j/X", "j"));
             Assert.Throws<RegexParseException>(() => match(@"/[\j]+/X", "j"));
         }
+
+        [Fact]
+        public void TestFailVerb()
+        {
+            Assert.False(match(@"/a(*FAIL)/", "a").Success);
+            Assert.False(match(@"/a(*F)/", "a").Success);
+            Assert.Equal("abc", match(@"/(ab(*F)|abc)/", "abc").Value);
+        }
     }
 }

@@ -1229,7 +1229,7 @@ namespace Peachpie.Library.RegularExpressions
             if (StringExtensions.Equals(verbSpan, "ACCEPT"))
                 return RegexCode.AcceptVerb;
             else if (StringExtensions.Equals(verbSpan, "FAIL") || StringExtensions.Equals(verbSpan, "F"))
-                return RegexCode.FailVerb;
+                return RegexCode.Nothing;
             else if (StringExtensions.Equals(verbSpan, "COMMIT"))
                 return RegexCode.CommitVerb;
             else if (StringExtensions.Equals(verbSpan, "PRUNE"))

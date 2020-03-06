@@ -57,7 +57,7 @@ namespace Peachpie.Library.RegularExpressions
         internal const int EndZ = 20;               //                          \Z
         internal const int End = 21;                //                          \Z
 
-        internal const int Nothing = 22;            //                          Reject!
+        internal const int Nothing = 22;            //                          Reject! - the same as (*FAIL)
 
         // Primitive control structures
 
@@ -90,11 +90,10 @@ namespace Peachpie.Library.RegularExpressions
         internal const int CallSubroutine = 44;     // back                     (?n)
 
         internal const int AcceptVerb = 45;         //                          (*ACCEPT)
-        internal const int FailVerb = 46;           //                          (*FAIL), (*F)
-        internal const int CommitVerb = 47;         // back                     (*COMMIT)
-        internal const int PruneVerb = 48;          // back                     (*PRUNE)
-        internal const int SkipVerb = 49;           // back                     (*SKIP)
-        internal const int ThenVerb = 50;           // back                     (*THEN)
+        internal const int CommitVerb = 46;         // back                     (*COMMIT)
+        internal const int PruneVerb = 47;          // back                     (*PRUNE)
+        internal const int SkipVerb = 48;           // back                     (*SKIP)
+        internal const int ThenVerb = 49;           // back                     (*THEN)
 
         // Modifiers for alternate modes
         internal const int Mask = 63;   // Mask to get unmodified ordinary operator
@@ -203,7 +202,6 @@ namespace Peachpie.Library.RegularExpressions
                 case Stop:
                 case ResetMatchStart:
                 case AcceptVerb:
-                case FailVerb:
                 case CommitVerb:
                 case PruneVerb:
                 case SkipVerb:
@@ -261,7 +259,7 @@ namespace Peachpie.Library.RegularExpressions
             "Prune", "Stop",
             "ECMABoundary", "NonECMABoundary",
             "ResetMatchStart", "CallSubroutine",
-            "AcceptVerb", "FailVerb", "CommitVerb", "PruneVerb", "SkipVerb", "ThenVerb",
+            "AcceptVerb", "CommitVerb", "PruneVerb", "SkipVerb", "ThenVerb",
         };
 
         internal static string OperatorDescription(int Opcode)
