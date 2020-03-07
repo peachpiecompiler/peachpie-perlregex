@@ -497,8 +497,17 @@ namespace Peachpie.Library.RegularExpressions
             return false;
         }
 
-        protected override void Go()
+        private int CalculateBumpToPos(int origTextPos, int trgTextPos)
         {
+            // We must bump at least by one (in the given direction) not to get stuck in place
+            int trgBump = trgTextPos - origTextPos;
+            return (!runregex.RightToLeft) ? Math.Max(1, trgBump) : Math.Min(-1, trgBump);
+        }
+
+        protected override void Go(ref int bump)
+        {
+            int origTextPos = Textpos();
+
             Goto(0);
 
             int advance = -1;
@@ -1250,6 +1259,18 @@ namespace Peachpie.Library.RegularExpressions
                     case RegexCode.CallSubroutine | RegexCode.Back:
                         PopCallFrame();                                 // It must have been from the called subroutine
                         break;
+
+                    case RegexCode.SkipVerb:
+                        TrackPush(Textpos());       // Store the current text position to be used in backtrack
+                        advance = 0;
+                        continue;
+
+                    case RegexCode.SkipVerb | RegexCode.Back:       // TODO: Make it work correctly inside negative lookarounds if necessary
+                        TrackPop();
+                        bump = CalculateBumpToPos(origTextPos, TrackPeek());    // Adjust the bump so that the next search starts from the current position
+                        Textto(origTextPos);                                    // Restore the text position to the original one 
+                        _callStack = null;                                      // Erase possible call stack due to earlier return (other stacks are handled by the caller)
+                        return;                                                 // Exit this scan prematurely
 
                     default:
                         throw new NotImplementedException(SR.UnimplementedState);

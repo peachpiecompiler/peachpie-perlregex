@@ -93,7 +93,7 @@ namespace Peachpie.Library.RegularExpressions
 
         protected internal Match Scan(Regex regex, string text, int textbeg, int textend, int textstart, int prevlen, bool quick, TimeSpan timeout)
         {
-            int bump;
+            int bumpOne;
             int stoppos;
             bool initted = false;
 
@@ -112,7 +112,7 @@ namespace Peachpie.Library.RegularExpressions
             runtextend = textend;
             runtextstart = textstart;
 
-            bump = runregex.RightToLeft ? -1 : 1;
+            bumpOne = runregex.RightToLeft ? -1 : 1;
             stoppos = runregex.RightToLeft ? runtextbeg : runtextend;
 
             runtextpos = textstart;
@@ -127,7 +127,7 @@ namespace Peachpie.Library.RegularExpressions
                 if (runtextpos == stoppos)
                     return Match.Empty;
 
-                runtextpos += bump;
+                runtextpos += bumpOne;
             }
 
             //StartTimeoutWatch();
@@ -142,6 +142,9 @@ namespace Peachpie.Library.RegularExpressions
                     Debug.WriteLine("Firstchar search starting at " + runtextpos.ToString(CultureInfo.InvariantCulture) + " stopping at " + stoppos.ToString(CultureInfo.InvariantCulture));
                 }
 #endif
+                // By default (if Go doesn't change it) we bump only by one character
+                int nextBump = bumpOne;
+
                 if (FindFirstChar())
                 {
                     //CheckTimeout();
@@ -158,7 +161,7 @@ namespace Peachpie.Library.RegularExpressions
                         Debug.WriteLine("");
                     }
 #endif
-                    Go();
+                    Go(ref nextBump);
 
                     if (runmatch._matchcount[0] > 0 && (prevlen != 0 || runtextpos > textstart))
                     {
@@ -184,9 +187,9 @@ namespace Peachpie.Library.RegularExpressions
 
                 // Recognize leading []* and various anchors, and bump on failure accordingly
 
-                // Bump by one and start again
+                // Bump and start again
 
-                runtextpos += bump;
+                runtextpos += nextBump;
             }
             // We never get here
         }
@@ -256,7 +259,12 @@ namespace Peachpie.Library.RegularExpressions
         /// then to leave runtextpos at the ending position. It should leave
         /// runtextpos where it started if there was no match.
         /// </summary>
-        protected abstract void Go();
+        /// <param name="bump">
+        /// The offset by which to increase the current text position before
+        /// <see cref="Go(ref int)"/> is called again. Might be modified by
+        /// backtracking control verbs.
+        /// </param>
+        protected abstract void Go(ref int bump);
 
         /// <summary>
         /// The responsibility of FindFirstChar() is to advance runtextpos

@@ -114,5 +114,14 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.False(match(@"/a(*F)/", "a").Success);
             Assert.Equal("abc", match(@"/(ab(*F)|abc)/", "abc").Value);
         }
+
+        [Fact]
+        public void TestSkipVerb()
+        {
+            Assert.Equal("aaabd", match(@"/aa(*SKIP)ab(c|d)/", "aaaabc aaabd").Value);
+            Assert.Equal("ab", match(@"/a(*SKIP)b/", "aab").Value);
+            Assert.Equal("ab", match(@"/(*SKIP)ab/", "aab").Value);
+            Assert.False(match(@"/(ab(*SKIP)(*F)|abc)/", "abc").Success);
+        }
     }
 }
