@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-
+    <NoWarn>CS1591</NoWarn>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -15,5 +15,5 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Peachpie.Library.RegularExpressions\Peachpie.Library.RegularExpressions.csproj" />
   </ItemGroup>
-  
+
 </Project>

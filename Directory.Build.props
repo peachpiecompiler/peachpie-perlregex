@@ -1,0 +1,38 @@
+<Project>
+
+  <PropertyGroup>
+
+    <!-- version -->
+    <Version Condition=" '$(Version)'=='' ">1.2.0</Version>
+    <PackageVersion>$(Version)</PackageVersion>
+
+    <!-- metadata generation -->
+    <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <LangVersion>latest</LangVersion>
+    <GenerateFullPaths>true</GenerateFullPaths>
+
+    <!-- signing -->
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)build\core.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+
+  </PropertyGroup>
+
+  <!-- package -->
+  <PropertyGroup>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/peachpiecompiler/peachpie-perlregex</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/peachpiecompiler/peachpie-perlregex</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)output</PackageOutputPath>
+    <PackageIconUrl>https://github.com/peachpiecompiler/peachpie/raw/master/docs/logos/round-orange-196x196.png</PackageIconUrl>
+  </PropertyGroup>
+
+</Project>
