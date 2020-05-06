@@ -2732,6 +2732,9 @@ namespace Peachpie.Library.RegularExpressions
          */
         private void AddGroup()
         {
+            // Try to identify common patterns for matching UTF-8 ranges and convert them to UTF-16
+            RegexUtf8RangeTransformer.TryTransformRanges(_concatenation);
+
             if (_group.Type() == RegexNode.Testgroup || _group.Type() == RegexNode.Testref)
             {
                 _group.AddChild(_concatenation.ReverseLeft());

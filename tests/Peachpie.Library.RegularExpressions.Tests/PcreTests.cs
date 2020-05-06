@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Xunit;
 
 namespace Peachpie.Library.RegularExpressions.Tests
@@ -122,6 +122,34 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.Equal("ab", match(@"/a(*SKIP)b/", "aab").Value);
             Assert.Equal("ab", match(@"/(*SKIP)ab/", "aab").Value);
             Assert.False(match(@"/(ab(*SKIP)(*F)|abc)/", "abc").Success);
+        }
+
+        [Fact]
+        public void TestUtf8Ranges1()
+        {
+            Assert.Equal("\u0080", match(@"/[\xC2-\xDF][\x80-\xBF]/", "\u0080").Value);
+            Assert.Equal("ř", match(@"/[\xC2-\xDF][\x80-\xBF]/", "ř").Value);
+            Assert.Equal("\u07FF", match(@"/[\xC2-\xDF][\x80-\xBF]/", "\u07FF").Value);
+
+            Assert.Equal("\u0800", match(@"/\xE0[\xA0-\xBF][\x80-\xBF]/", "\u0800").Value);
+            Assert.Equal("\u0FFF", match(@"/\xE0[\xA0-\xBF][\x80-\xBF]/", "\u0FFF").Value);
+
+            Assert.Equal("\u1000", match(@"/[\xE1-\xEC][\x80-\xBF]{2}/", "\u1000").Value);
+            Assert.Equal("\uCFFF", match(@"/[\xE1-\xEC][\x80-\xBF]{2}/", "\uCFFF").Value);
+
+            Assert.Equal("\uD000", match(@"/\xED[\x80-\x9F][\x80-\xBF]/", "\uD000").Value);
+            Assert.Equal("\uD7FF", match(@"/\xED[\x80-\x9F][\x80-\xBF]/", "\uD7FF").Value);
+
+            Assert.Equal("\uE000", match(@"/[\xEE-\xEF][\x80-\xBF]{2}/", "\uE000").Value);
+            Assert.Equal("\uFFFF", match(@"/[\xEE-\xEF][\x80-\xBF]{2}/", "\uFFFF").Value);
+        }
+
+        [Fact]
+        public void TestUtf8Ranges2()
+        {
+            string czechSentence = "Příliš žluťoučký kůň úpěl ďábelské ódy";
+
+            Assert.Equal(czechSentence, match(@"/([\x00-\x7F]|[\xC2-\xDF][\x80-\xBF])*/", czechSentence).Value);
         }
     }
 }
