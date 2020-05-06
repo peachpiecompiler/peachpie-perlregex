@@ -437,6 +437,9 @@ namespace Peachpie.Library.RegularExpressions
             if (Children == null)
                 return new RegexNode(Empty, Options);
 
+            // Try to identify common patterns for matching UTF-8 ranges and convert them to UTF-16
+            RegexUtf8RangeTransformer.TryTransformRanges(this);
+
             bool wasLastString = false;
             RegexOptions optionsLast = 0;
             RegexOptions optionsAt;

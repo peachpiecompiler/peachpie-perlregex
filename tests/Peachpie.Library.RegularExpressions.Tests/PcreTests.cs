@@ -142,6 +142,15 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             Assert.Equal("\uE000", match(@"/[\xEE-\xEF][\x80-\xBF]{2}/", "\uE000").Value);
             Assert.Equal("\uFFFF", match(@"/[\xEE-\xEF][\x80-\xBF]{2}/", "\uFFFF").Value);
+
+            Assert.Equal("\U00010000", match(@"/\xF0[\x90-\xBF][\x80-\xBF]{2}/", "\U00010000").Value);
+            Assert.Equal("\U0003FFFF", match(@"/\xF0[\x90-\xBF][\x80-\xBF]{2}/", "\U0003FFFF").Value);
+
+            Assert.Equal("\U00040000", match(@"/[\xF1-\xF3][\x80-\xBF]{3}/", "\U00040000").Value);
+            Assert.Equal("\U000FFFFF", match(@"/[\xF1-\xF3][\x80-\xBF]{3}/", "\U000FFFFF").Value);
+
+            Assert.Equal("\U00100000", match(@"/\xF4[\x80-\x8F][\x80-\xBF]{2}/", "\U00100000").Value);
+            Assert.Equal("\U0010FFFF", match(@"/\xF4[\x80-\x8F][\x80-\xBF]{2}/", "\U0010FFFF").Value);
         }
 
         [Fact]
@@ -150,6 +159,23 @@ namespace Peachpie.Library.RegularExpressions.Tests
             string czechSentence = "Příliš žluťoučký kůň úpěl ďábelské ódy";
 
             Assert.Equal(czechSentence, match(@"/([\x00-\x7F]|[\xC2-\xDF][\x80-\xBF])*/", czechSentence).Value);
+
+            string utf8pattern = @"/
+	            (
+	            (?: [\x00-\x7F]                  # single-byte sequences   0xxxxxxx
+	            |   [\xC2-\xDF][\x80-\xBF]       # double-byte sequences   110xxxxx 10xxxxxx
+	            |   \xE0[\xA0-\xBF][\x80-\xBF]   # triple-byte sequences   1110xxxx 10xxxxxx * 2
+	            |   [\xE1-\xEC][\x80-\xBF]{2}
+	            |   \xED[\x80-\x9F][\x80-\xBF]
+	            |   [\xEE-\xEF][\x80-\xBF]{2}
+	            |   \xF0[\x90-\xBF][\x80-\xBF]{2} # four-byte sequences   11110xxx 10xxxxxx * 3
+	            |   [\xF1-\xF3][\x80-\xBF]{3}
+	            |   \xF4[\x80-\x8F][\x80-\xBF]{2}
+	            ){1,40}                          # ...one or more times
+	            ) | .                            # anything else
+	            /x";
+
+            Assert.Equal(czechSentence, replace(utf8pattern, "$1", czechSentence));
         }
     }
 }

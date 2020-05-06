@@ -19,26 +19,38 @@ namespace Peachpie.Library.RegularExpressions
         {
             public string Utf16Range { get; }
 
+            public string Utf16Range2 { get; }
+
             public bool IsFinal => Utf16Range != null;
 
             private delegate MatchState NextStateMatcher(char lower, char upper);
 
             private NextStateMatcher NextMatcher { get; }
 
-            private MatchState(string utf16Range, NextStateMatcher next)
+            private MatchState(string utf16Range, string utf16Range2, NextStateMatcher next)
             {
                 this.Utf16Range = utf16Range;
+                this.Utf16Range2 = utf16Range2;
                 this.NextMatcher = next;
             }
 
-            private static MatchState CreateIntermediate(NextStateMatcher nextMatcher) => new MatchState(null, nextMatcher);
+            private static MatchState CreateIntermediate(NextStateMatcher nextMatcher) => new MatchState(null, null, nextMatcher);
 
-            private static MatchState CreateFinal(char utf16RangeFirst, char utf16RangeLast)
+            private static MatchState CreateFinal(char utf16RangeFirst, char utf16RangeLast, char? utf16Range2First = null, char? utf16Range2Last = null)
             {
                 var charClass = new RegexCharClass();
                 charClass.AddRange(utf16RangeFirst, utf16RangeLast);
 
-                return new MatchState(charClass.ToStringClass(), (f, l) => null);
+                RegexCharClass charClass2 = null;
+                if (utf16Range2First != null)
+                {
+                    Debug.Assert(utf16Range2Last != null);
+
+                    charClass2 = new RegexCharClass();
+                    charClass2.AddRange(utf16Range2First.Value, utf16Range2Last.Value);
+                }
+
+                return new MatchState(charClass.ToStringClass(), charClass2?.ToStringClass(), (f, l) => null);
             }
 
             public MatchState MatchNextState(char singleChar) => NextMatcher(singleChar, singleChar) ?? Start;
@@ -62,13 +74,22 @@ namespace Peachpie.Library.RegularExpressions
             public static MatchState Start = CreateIntermediate((f, l) =>
                 (f, l) switch
                 {
-                    ('\xC2', '\xDF') => TwoByte1,                   //  [\xC2-\xDF][\x80-\xBF]     => [\u0080-\u07FF]
-                    ('\xE0', '\xE0') => ThreeByteNoOverlongs1,      //  \xE0[\xA0-\xBF][\x80-\xBF] => [\u0800-\u0FFF]
-                    ('\xE1', '\xEC') => ThreeByteStraight1,         //  [\xE1-\xEC][\x80-\xBF]{2}  => [\u1000-\uCFFF]
-                    ('\xED', '\xED') => ThreeBytePresurrogates1,    //  \xED[\x80-\x9F][\x80-\xBF] => [\uD000-\uD7FF]
-                    ('\xEE', '\xEF') => ThreeBytePostsurrogates1,   //  [\xEE-\xEF][\x80-\xBF]{2}  => [\uE000-\uFFFF]
+                    // 2 bytes
+                    ('\xC2', '\xDF') => TwoByte1,                   // [\xC2-\xDF][\x80-\xBF]        => [\u0080-\u07FF]
+
+                    // 3 bytes
+                    ('\xE0', '\xE0') => ThreeByteNoOverlongs1,      // \xE0[\xA0-\xBF][\x80-\xBF]    => [\u0800-\u0FFF]
+                    ('\xE1', '\xEC') => ThreeByteStraight1,         // [\xE1-\xEC][\x80-\xBF]{2}     => [\u1000-\uCFFF]
+                    ('\xED', '\xED') => ThreeBytePresurrogates1,    // \xED[\x80-\x9F][\x80-\xBF]    => [\uD000-\uD7FF]
+                    ('\xEE', '\xEF') => ThreeBytePostsurrogates1,   // [\xEE-\xEF][\x80-\xBF]{2}     => [\uE000-\uFFFF]
+
+                    // 4 bytes - conversion to surrogate pairs
+                    ('\xF0', '\xF0') => FourByteFirst1,            // \xF0[\x90-\xBF][\x80-\xBF]{2} => [\u10000-\u3FFFF] => [\uD800-\uD8BF][\uDC00-\uDFFF]
+                    ('\xF1', '\xF3') => FourByteSecond1,           // [\xF1-\xF3][\x80-\xBF]{3}     => [\u40000-\uFFFFF] => [\uD8C0-\uDBBF][\uDC00-\uDFFF]
+                    ('\xF4', '\xF4') => FourByteThird1,            // \xF4[\x80-\x8F][\x80-\xBF]{2} => [\u100000-\u10FFFF] => [\uDBC0-\uDBFF][\uDC00-\uDFFF]
                     _ => null
                 });
+
 
             private static MatchState TwoByte1 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? TwoByte2 : null);
 
@@ -101,6 +122,33 @@ namespace Peachpie.Library.RegularExpressions
             private static MatchState ThreeBytePostsurrogates2 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? ThreeBytePostsurrogates3 : null);
 
             private static MatchState ThreeBytePostsurrogates3 = CreateFinal('\uE000', '\uFFFF');
+
+
+            private static MatchState FourByteFirst1 = CreateIntermediate((f, l) => (f, l) == ('\x90', '\xBF') ? FourByteFirst2 : null);
+
+            private static MatchState FourByteFirst2 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? FourByteFirst3 : null);
+
+            private static MatchState FourByteFirst3 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? FourByteFirst4 : null);
+
+            private static MatchState FourByteFirst4 = CreateFinal('\uD800', '\uD8BF', '\uDC00', '\uDFFF');
+
+
+            private static MatchState FourByteSecond1 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? FourByteSecond2 : null);
+
+            private static MatchState FourByteSecond2 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? FourByteSecond3 : null);
+
+            private static MatchState FourByteSecond3 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? FourByteSecond4 : null);
+
+            private static MatchState FourByteSecond4 = CreateFinal('\uD8C0', '\uDBBF', '\uDC00', '\uDFFF');
+
+
+            private static MatchState FourByteThird1 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\x8F') ? FourByteThird2 : null);
+
+            private static MatchState FourByteThird2 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? FourByteThird3 : null);
+
+            private static MatchState FourByteThird3 = CreateIntermediate((f, l) => (f, l) == ('\x80', '\xBF') ? FourByteThird4 : null);
+
+            private static MatchState FourByteThird4 = CreateFinal('\uDBC0', '\uDBFF', '\uDC00', '\uDFFF');
         }
 
         /// <summary>
@@ -165,11 +213,23 @@ namespace Peachpie.Library.RegularExpressions
                     if (matchState.IsFinal)
                     {
                         // Replace the matched sequence by a single range
-                        concatenation.Children[iMatchStart] = new RegexNode(RegexNode.Set, concatenation.Options, matchState.Utf16Range);
-                        concatenation.Children.RemoveRange(iMatchStart + 1, i - iMatchStart);
+
+                        concatenation.Children[iMatchStart] = new RegexNode(RegexNode.Set, concatenation.Options, matchState.Utf16Range) { Next = concatenation };
+                        int replacedItems = 1;
+
+                        if (matchState.Utf16Range2 != null)
+                        {
+                            // We expect there are at least two nodes to be replaced for a 4-byte UTF-8 range match
+                            Debug.Assert(i - iMatchStart >= 1);
+
+                            concatenation.Children[iMatchStart + 1] = new RegexNode(RegexNode.Set, concatenation.Options, matchState.Utf16Range2) { Next = concatenation };
+                            replacedItems++;
+                        }
+
+                        concatenation.Children.RemoveRange(iMatchStart + replacedItems, i - (iMatchStart + replacedItems - 1));
 
                         // Fix iteration variable after the range removal
-                        i = iMatchStart;
+                        i = iMatchStart + (replacedItems - 1);
 
                         // Reset the found match
                         iMatchStart = -1;
