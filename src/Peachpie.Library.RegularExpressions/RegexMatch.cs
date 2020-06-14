@@ -226,27 +226,30 @@ namespace Peachpie.Library.RegularExpressions
         /// <summary>
         /// Adds a capture to the group specified by "cap"
         /// </summary>
-        internal virtual void AddMatch(int cap, int start, int len)
+        internal void AddMatch(int cap, int start, int len)
         {
-            int capcount;
+            var matches_cap = _matches[cap] ??= new int[2];
+            var capcount = _matchcount[cap];
 
-            if (_matches[cap] == null)
-                _matches[cap] = new int[2];
-
-            capcount = _matchcount[cap];
-
-            if (capcount * 2 + 2 > _matches[cap].Length)
+            if (capcount * 2 + 2 > matches_cap.Length)
             {
-                int[] oldmatches = _matches[cap];
-                int[] newmatches = new int[capcount * 8];
-                for (int j = 0; j < capcount * 2; j++)
-                    newmatches[j] = oldmatches[j];
-                _matches[cap] = newmatches;
+                _matches[cap] = matches_cap = ResizeArray(matches_cap, capcount * 2, capcount * 8);
             }
 
-            _matches[cap][capcount * 2] = start;
-            _matches[cap][capcount * 2 + 1] = len;
+            matches_cap[capcount * 2] = start;
+            matches_cap[capcount * 2 + 1] = len;
             _matchcount[cap] = capcount + 1;
+        }
+
+        static int[] ResizeArray(int[] oldarray, int oldlength, int newlength)
+        {
+            var newarray = new int[newlength];
+            for (int j = 0; j < oldlength; j++)
+            {
+                newarray[j] = oldarray[j];
+            }
+
+            return newarray;
         }
 
         /*
