@@ -179,7 +179,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
-        public void TestNewline()
+        public void TestNewlineBasic()
         {
             Assert.False(match("/\\Ra/", "aa").Success);
             Assert.True(match("/\\Ra/", "\ra").Success);
@@ -192,6 +192,41 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.False(match("/\\Ra/", "\x2029a").Success);
             Assert.True(match("/\\Ra/u", "\x2028a").Success);
             Assert.True(match("/\\Ra/u", "\x2029a").Success);
+        }
+
+        [Fact]
+        public void TestNewlineConfig()
+        {
+            Assert.False(match("/(*BSR_UNICODE)\\Ra/", "aa").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/", "\ra").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/", "\na").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/", "\r\na").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/", "\x000Ba").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/", "\x000Ca").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/", "\x0085a").Success);
+            Assert.False(match("/(*BSR_UNICODE)\\Ra/", "\x2028a").Success);
+            Assert.False(match("/(*BSR_UNICODE)\\Ra/", "\x2029a").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/u", "\x2028a").Success);
+            Assert.True(match("/(*BSR_UNICODE)\\Ra/u", "\x2029a").Success);
+            Assert.True(match("/(*UTF8)(*BSR_UNICODE)\\Ra/", "\x2028a").Success);
+            Assert.True(match("/(*UTF8)(*BSR_UNICODE)\\Ra/", "\x2029a").Success);
+
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/", "aa").Success);
+            Assert.True(match("/(*BSR_ANYCRLF)\\Ra/", "\ra").Success);
+            Assert.True(match("/(*BSR_ANYCRLF)\\Ra/", "\na").Success);
+            Assert.True(match("/(*BSR_ANYCRLF)\\Ra/", "\r\na").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/", "\x000Ba").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/", "\x000Ca").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/", "\x0085a").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/", "\x2028a").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/", "\x2029a").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/u", "\x2028a").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)\\Ra/u", "\x2029a").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)(*UTF8)\\Ra/", "\x2028a").Success);
+            Assert.False(match("/(*BSR_ANYCRLF)(*UTF8)\\Ra/", "\x2029a").Success);
+
+            Assert.False(match("/(*BSR_UNICODE)(*BSR_ANYCRLF)\\Ra/", "\x000Ba").Success);
+            Assert.True(match("/(*BSR_ANYCRLF)(*BSR_UNICODE)\\Ra/", "\x000Ba").Success);
         }
     }
 }
