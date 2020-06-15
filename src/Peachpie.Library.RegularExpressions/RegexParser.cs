@@ -24,6 +24,17 @@ namespace Peachpie.Library.RegularExpressions
 {
     internal ref struct RegexParser
     {
+        [Flags]
+        private enum NewlineTypes
+        {
+            Cr = 0x1,
+            Lf = 0x2,
+            CrLf = 0x4,
+            Unicode = 0x8,
+            AnyCrLf = Cr | Lf | CrLf,
+            Any = AnyCrLf | Unicode
+        }
+
         private const int EscapeMaxBufferSize = 256;
         private const int OptionStackDefaultSize = 32;
         private const int MaxValueDiv10 = int.MaxValue / 10;
@@ -1375,16 +1386,71 @@ namespace Peachpie.Library.RegularExpressions
                         cc.AddLowercase(_culture);
                     return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
 
-                case 'R':   // new line separator, Unicode category `Zl`
+                case 'R':   // new line separator
                     MoveRight();
                     if (scanOnly)
                         return null;
-                    cc = new RegexCharClass();
-                    cc.AddCategoryFromName("Zl", false, false, _currentPos + _offsetPos);
-                    return new RegexNode(RegexNode.Set, _options, cc.ToStringClass());
+                    return CreateNewLineParseNode(NewlineTypes.Any);
 
                 default:
                     return ScanBasicBackslash(scanOnly);
+            }
+        }
+
+        /// <summary>
+        /// Creates a <see cref="RegexNode"/> which processes new lines according to their specified types
+        /// and current settings, see:
+        /// https://www.pcre.org/original/doc/html/pcrepattern.html#SEC27
+        /// </summary>
+        private RegexNode CreateNewLineParseNode(NewlineTypes newlines)
+        {
+            if (newlines == NewlineTypes.CrLf)
+            {
+                // \r\n
+                return new RegexNode(RegexNode.Multi, _options, "\r\n");
+            }
+
+            var charClass = new RegexCharClass();
+
+            if ((newlines & NewlineTypes.Cr) != 0)
+            {
+                charClass.AddChar('\r');
+            }
+
+            if ((newlines & NewlineTypes.Lf) != 0)
+            {
+                charClass.AddChar('\n');
+            }
+
+            if ((newlines & NewlineTypes.Unicode) != 0)
+            {
+                charClass.AddChar('\x000B');    // Vertical tab
+                charClass.AddChar('\x000C');    // Form feed
+                charClass.AddChar('\x0085');    // Next line
+
+                if ((_options & RegexOptions.PCRE_UTF8) != 0)
+                {
+                    // Those 3-byte UTF-8 characters are not matched in PCRE if the UTF-8 switch is off
+                    charClass.AddChar('\x2028');    // Line separator
+                    charClass.AddChar('\x2029');    // Paragraph separator
+                }
+            }
+
+            var setNode = new RegexNode(RegexNode.Set, _options, charClass.ToStringClass());
+            if ((newlines & NewlineTypes.CrLf) != 0)
+            {
+                // Use greedy (non-capturing) group to capture either \r\n or any of the single characters:
+                // (?>\r\n|[\n\r...])
+                var crlfNode = new RegexNode(RegexNode.Multi, _options, "\r\n");
+                var altNode = new RegexNode(RegexNode.Alternate, _options);
+                altNode.AddChild(crlfNode);
+                altNode.AddChild(setNode);
+                return altNode.MakePossessive();
+            }
+            else
+            {
+                // [\n\r...]
+                return setNode;
             }
         }
 

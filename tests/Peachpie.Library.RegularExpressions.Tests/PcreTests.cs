@@ -177,5 +177,21 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             Assert.Equal(czechSentence, replace(utf8pattern, "$1", czechSentence));
         }
+
+        [Fact]
+        public void TestNewline()
+        {
+            Assert.False(match("/\\Ra/", "aa").Success);
+            Assert.True(match("/\\Ra/", "\ra").Success);
+            Assert.True(match("/\\Ra/", "\na").Success);
+            Assert.True(match("/\\Ra/", "\r\na").Success);
+            Assert.True(match("/\\Ra/", "\x000Ba").Success);
+            Assert.True(match("/\\Ra/", "\x000Ca").Success);
+            Assert.True(match("/\\Ra/", "\x0085a").Success);
+            Assert.False(match("/\\Ra/", "\x2028a").Success);
+            Assert.False(match("/\\Ra/", "\x2029a").Success);
+            Assert.True(match("/\\Ra/u", "\x2028a").Success);
+            Assert.True(match("/\\Ra/u", "\x2029a").Success);
+        }
     }
 }
