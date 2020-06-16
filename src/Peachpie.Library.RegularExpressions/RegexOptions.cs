@@ -73,6 +73,11 @@ namespace Peachpie.Library.RegularExpressions
             RegexOptions.PCRE_BSR_ANYCRLF | RegexOptions.PCRE_BSR_UNICODE;
 
         /// <summary>
+        /// Extract only the newline conventions from the options.
+        /// </summary>
+        public static RegexOptions GetNewlineConvention(this RegexOptions options) => options & NewlineConventionMask;
+
+        /// <summary>
         /// Clear previous newline convention and set it to the given one.
         /// </summary>
         public static RegexOptions WithNewlineConvention(this RegexOptions options, RegexOptions newlineConvention)
@@ -81,6 +86,11 @@ namespace Peachpie.Library.RegularExpressions
 
             return (options & ~NewlineConventionMask) | newlineConvention;
         }
+
+        /// <summary>
+        /// Extract only the \R newline conventions from the options.
+        /// </summary>
+        public static RegexOptions GetBsrNewlineConvention(this RegexOptions options) => options & BsrNewlineConventionMask;
 
         /// <summary>
         /// Clear previous \R newline convention and set it to the given one.

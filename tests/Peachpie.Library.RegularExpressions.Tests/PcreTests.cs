@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Peachpie.Library.RegularExpressions.Tests
@@ -179,7 +180,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
-        public void TestNewlineBasic()
+        public void TestBsrNewlineBasic()
         {
             Assert.False(match("/\\Ra/", "aa").Success);
             Assert.True(match("/\\Ra/", "\ra").Success);
@@ -195,7 +196,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
-        public void TestNewlineConfig()
+        public void TestBsrNewlineConfig()
         {
             Assert.False(match("/(*BSR_UNICODE)\\Ra/", "aa").Success);
             Assert.True(match("/(*BSR_UNICODE)\\Ra/", "\ra").Success);
@@ -227,6 +228,63 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             Assert.False(match("/(*BSR_UNICODE)(*BSR_ANYCRLF)\\Ra/", "\x000Ba").Success);
             Assert.True(match("/(*BSR_ANYCRLF)(*BSR_UNICODE)\\Ra/", "\x000Ba").Success);
+        }
+
+        public static IEnumerable<object[]> GetNewlineTestData()
+        {
+            foreach (var sequence in new[] { "", "(*CR)", "(*LF)", "(*ANYCRLF)", "(*ANY)" })
+            {
+                foreach (var newline in new[] { "\r", "\n", "\x000B", "\x000C", "\x0085", "\x2028", "\x2029" })
+                {
+                    bool isMatched =
+                        (sequence == "(*CR)" && newline.StartsWith("\r")) ||
+                        ((sequence == "(*LF)" || sequence == "") && newline == "\n") ||
+                        (sequence == "(*CRLF)" && newline == "\r\n") ||
+                        (sequence == "(*ANYCRLF)" && (newline == "\r" || newline == "\n" || newline == "\r\n")) ||
+                        (sequence == "(*ANY)");
+
+                    yield return new object[] { sequence, newline, isMatched };
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetNewlineTestData))]
+        public void TestNewline(string specialSequences, string newline, bool isMatched)
+        {
+            Assert.Equal(isMatched, match("/" + specialSequences + "^a/mu", newline + "a").Success);
+            Assert.Equal(isMatched, match("/" + specialSequences + "a$/mu", "a" + newline).Success);
+            Assert.Equal(isMatched, match("/" + specialSequences + "a$.b/msu", "a" + newline + "b").Success);
+            Assert.Equal(isMatched, match("/" + specialSequences + "a\\Z/u", "a" + newline).Success);
+            Assert.Equal(isMatched, !match("/" + specialSequences + "a.\\z/u", "a" + newline).Success);
+        }
+
+        [Fact]
+        public void TestNewlineCrLf()
+        {
+            Assert.True(match("/^a/m", "\r\na").Success);
+            Assert.False(match("/(*CR)^a/m", "\r\na").Success);
+            Assert.True(match("/(*CRLF)^a/m", "\r\na").Success);
+            Assert.True(match("/(*ANYCRLF)^a/m", "\r\na").Success);
+            Assert.True(match("/(*ANY)^a/m", "\r\na").Success);
+
+            Assert.False(match("/a$/", "a\r\n").Success);
+            Assert.False(match("/(*CR)a$/", "a\r\n").Success);
+            Assert.True(match("/(*CRLF)a$/", "a\r\n").Success);
+            Assert.True(match("/(*ANYCRLF)a$/", "a\r\n").Success);
+            Assert.True(match("/(*ANY)a$/", "a\r\n").Success);
+
+            Assert.False(match("/a$.b/ms", "a\r\nb").Success);
+            Assert.False(match("/(*CR)a$.b/ms", "a\r\nb").Success);
+            Assert.False(match("/(*CRLF)a$.b/ms", "a\r\nb").Success);
+            Assert.False(match("/(*ANYCRLF)a$.b/ms", "a\r\nb").Success);
+            Assert.False(match("/(*ANY)a$.b/ms", "a\r\nb").Success);
+
+            Assert.False(match("/a\\Z/", "a\r\n").Success);
+            Assert.False(match("/(*CR)a\\Z/", "a\r\n").Success);
+            Assert.True(match("/(*CRLF)a\\Z/", "a\r\n").Success);
+            Assert.True(match("/(*ANYCRLF)a\\Z/", "a\r\n").Success);
+            Assert.True(match("/(*ANY)a\\Z/", "a\r\n").Success);
         }
     }
 }
