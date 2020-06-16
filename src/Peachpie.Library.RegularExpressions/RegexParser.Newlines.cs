@@ -86,20 +86,15 @@ namespace Peachpie.Library.RegularExpressions
 
         private NewlineTypes GetNewlineTypes()
         {
-            switch (_options.GetNewlineConvention())
+            return _options.GetNewlineConvention() switch
             {
-                case RegexOptions.PCRE_NEWLINE_CR:
-                    return NewlineTypes.Cr;
-                default:
-                case RegexOptions.PCRE_NEWLINE_LF:
-                    return NewlineTypes.Lf;
-                case RegexOptions.PCRE_NEWLINE_CRLF:
-                    return NewlineTypes.CrLf;
-                case RegexOptions.PCRE_NEWLINE_ANY:
-                    return NewlineTypes.AnySequence;
-                case RegexOptions.PCRE_NEWLINE_ANYCRLF:
-                    return NewlineTypes.AnyCrLf;
-            }
+                RegexOptions.PCRE_NEWLINE_CR => NewlineTypes.Cr,
+                RegexOptions.PCRE_NEWLINE_LF => NewlineTypes.Lf,
+                RegexOptions.PCRE_NEWLINE_CRLF => NewlineTypes.CrLf,
+                RegexOptions.PCRE_NEWLINE_ANY => NewlineTypes.AnySequence,
+                RegexOptions.PCRE_NEWLINE_ANYCRLF => NewlineTypes.AnyCrLf,
+                _ => NewlineTypes.Lf,
+            };
         }
 
         /// <summary>

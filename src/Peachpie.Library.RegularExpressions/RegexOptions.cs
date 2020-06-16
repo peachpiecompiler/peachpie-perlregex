@@ -61,10 +61,10 @@ namespace Peachpie.Library.RegularExpressions
         PCRE_NEWLINE_ANY        = 0x00400000,   // (*ANY)
         PCRE_NEWLINE_ANYCRLF    = 0x00500000,   // (*ANYCRLF)
         PCRE_BSR_ANYCRLF        = 0x00800000,   // (*BSR_ANYCRLF)
-        PCRE_BSR_UNICODE        = 0x01000000    // (*BSR_UNICODE)
+        PCRE_BSR_UNICODE        = 0x01000000,   // (*BSR_UNICODE)
     }
 
-    public static class RegexOptionExtensions
+    internal static class RegexOptionExtensions
     {
         private const RegexOptions NewlineConventionMask =
             RegexOptions.PCRE_NEWLINE_CR | RegexOptions.PCRE_NEWLINE_LF | RegexOptions.PCRE_NEWLINE_CRLF | RegexOptions.PCRE_NEWLINE_ANY | RegexOptions.PCRE_NEWLINE_ANYCRLF;
@@ -84,7 +84,7 @@ namespace Peachpie.Library.RegularExpressions
         {
             Debug.Assert((newlineConvention & ~(NewlineConventionMask)) == 0);
 
-            return (options & ~NewlineConventionMask) | newlineConvention;
+            return (options & ~NewlineConventionMask) | (newlineConvention & NewlineConventionMask);
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace Peachpie.Library.RegularExpressions
         {
             Debug.Assert((bsrNewlineConvention & ~(BsrNewlineConventionMask)) == 0);
 
-            return (options & ~BsrNewlineConventionMask) | bsrNewlineConvention;
+            return (options & ~BsrNewlineConventionMask) | (bsrNewlineConvention & BsrNewlineConventionMask);
         }
     }
 }

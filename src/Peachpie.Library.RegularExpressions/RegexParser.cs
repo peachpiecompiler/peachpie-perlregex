@@ -100,12 +100,12 @@ namespace Peachpie.Library.RegularExpressions
             int end;
             options |= TrimPcreRegexOption(re, out end);
             var pattern = TrimDelimiters(re, end, out var offset);
-            TrimPcreSpecialSequences(ref pattern, ref options);
+            options |= TrimPcreSpecialSequences(ref pattern);
             var culture = (options & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture;
 
             Span<RegexOptions> optionSpan = stackalloc RegexOptions[OptionStackDefaultSize];
             var parser = new RegexParser(pattern, options, culture, optionSpan);
-            
+
             parser._offsetPos = offset;
             parser.CountCaptures();
             parser.Reset(options);
@@ -211,12 +211,14 @@ namespace Peachpie.Library.RegularExpressions
         /// <summary>
         /// Parse all the special sequences at the start, e.g. (*UTF8)(*BSR_ANYCRLF)
         /// </summary>
-        private static void TrimPcreSpecialSequences(ref ReadOnlySpan<char> pattern, ref RegexOptions options)
+        private static RegexOptions TrimPcreSpecialSequences(ref ReadOnlySpan<char> pattern)
         {
+            RegexOptions options = default;
+
             // The main parsing loop
             while (pattern.StartsWith("(*".AsSpan(), StringComparison.Ordinal))
             {
-                bool IsOptionNameChar(char c) => char.IsUpper(c) || char.IsDigit(c) || c == '_';
+                static bool IsOptionNameChar(char c) => char.IsUpper(c) || char.IsDigit(c) || c == '_';
 
                 // Find the end of the sequence (should be ')')
                 int index = 2;
@@ -225,62 +227,59 @@ namespace Peachpie.Library.RegularExpressions
                     index++;
                 }
 
-                bool success = false;
-                if (index < pattern.Length && pattern[index] == ')')
-                {
-                    // "(*SOME_SEQ)" -> "SOME_SEQ"
-                    var seqSpan = pattern.Slice(2, index - 2);
-
-                    // Try to match the known sequences
-                    success = true;
-                    if (StringExtensions.Equals(seqSpan, "UTF8"))
-                    {
-                        options |= RegexOptions.PCRE_UTF8;
-                    }
-                    else if (StringExtensions.Equals(seqSpan, "BSR_UNICODE"))
-                    {
-                        options = options.WithBsrNewlineConvention(RegexOptions.PCRE_BSR_UNICODE);
-                    }
-                    else if (StringExtensions.Equals(seqSpan, "BSR_ANYCRLF"))
-                    {
-                        options = options.WithBsrNewlineConvention(RegexOptions.PCRE_BSR_ANYCRLF);
-                    }
-                    else if (StringExtensions.Equals(seqSpan, "CR"))
-                    {
-                        options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_CR);
-                    }
-                    else if (StringExtensions.Equals(seqSpan, "LF"))
-                    {
-                        options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_LF);
-                    }
-                    else if (StringExtensions.Equals(seqSpan, "CRLF"))
-                    {
-                        options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_CRLF);
-                    }
-                    else if (StringExtensions.Equals(seqSpan, "ANYCRLF"))
-                    {
-                        options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_ANYCRLF);
-                    }
-                    else if (StringExtensions.Equals(seqSpan, "ANY"))
-                    {
-                        options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_ANY);
-                    }
-                    else
-                    {
-                        // Skip parsing if it's unknown (it may be a backtracking verb)
-                        success = false;
-                    }
-                }
-
-                if (success)
-                {
-                    pattern = pattern.Slice(index + 1);
-                }
-                else
+                if (index >= pattern.Length || pattern[index] != ')')
                 {
                     break;
                 }
+
+                // "(*SOME_SEQ)" -> "SOME_SEQ"
+                var seqSpan = pattern.Slice(2, index - 2);
+
+                // Try to match the known sequences
+                if (StringExtensions.Equals(seqSpan, "UTF8"))
+                {
+                    options |= RegexOptions.PCRE_UTF8;
+                }
+                else if (StringExtensions.Equals(seqSpan, "BSR_UNICODE"))
+                {
+                    options = options.WithBsrNewlineConvention(RegexOptions.PCRE_BSR_UNICODE);
+                }
+                else if (StringExtensions.Equals(seqSpan, "BSR_ANYCRLF"))
+                {
+                    options = options.WithBsrNewlineConvention(RegexOptions.PCRE_BSR_ANYCRLF);
+                }
+                else if (StringExtensions.Equals(seqSpan, "CR"))
+                {
+                    options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_CR);
+                }
+                else if (StringExtensions.Equals(seqSpan, "LF"))
+                {
+                    options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_LF);
+                }
+                else if (StringExtensions.Equals(seqSpan, "CRLF"))
+                {
+                    options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_CRLF);
+                }
+                else if (StringExtensions.Equals(seqSpan, "ANYCRLF"))
+                {
+                    options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_ANYCRLF);
+                }
+                else if (StringExtensions.Equals(seqSpan, "ANY"))
+                {
+                    options = options.WithNewlineConvention(RegexOptions.PCRE_NEWLINE_ANY);
+                }
+                else
+                {
+                    // Skip parsing if it's unknown (it may be a backtracking verb)
+                    break;
+                }
+
+                // trim off the sequence and try next
+                pattern = pattern.Slice(index + 1);
             }
+
+            //
+            return options;
         }
 
         /// <summary>
@@ -2623,7 +2622,7 @@ namespace Peachpie.Library.RegularExpressions
 
             int pos = startpos;
             int nChars = CharsRight();
-            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9');
+            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9') ;
 
             if (nChars == 0 || pos - startpos == 1)
                 return false;
@@ -2634,7 +2633,7 @@ namespace Peachpie.Library.RegularExpressions
             if (ch != ',')
                 return false;
 
-            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9');
+            while (--nChars > 0 && (ch = CharAt(++pos)) >= '0' && ch <= '9') ;
 
             return nChars > 0 && ch == '}';
         }
@@ -2681,7 +2680,7 @@ namespace Peachpie.Library.RegularExpressions
                 }
                 else
                 {
-                     str = _pattern.Slice(pos, cch).ToString();
+                    str = _pattern.Slice(pos, cch).ToString();
                 }
 
                 node = new RegexNode(RegexNode.Multi, _options, str);
