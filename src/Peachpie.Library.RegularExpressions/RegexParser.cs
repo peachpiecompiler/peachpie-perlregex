@@ -70,12 +70,9 @@ namespace Peachpie.Library.RegularExpressions
         private RegexOptions _options;
         private ValueListBuilder<RegexOptions> _optionsStack;
 
-        /// <summary>Types of newlines to capture by \R.</summary>
-        private NewlineTypes _bsrNewlines;
-
         private bool _ignoreNextParen; // flag to skip capturing a parentheses group
 
-        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames, Span<RegexOptions> optionSpan, NewlineTypes bsrNewlines = NewlineTypes.Any)
+        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames, Span<RegexOptions> optionSpan)
         {
             Debug.Assert(pattern != null, "Pattern must be set");
             Debug.Assert(culture != null, "Culture must be set");
@@ -89,7 +86,6 @@ namespace Peachpie.Library.RegularExpressions
             _lazyCapsReverse = default;
 
             _optionsStack = new ValueListBuilder<RegexOptions>(optionSpan);
-            _bsrNewlines = bsrNewlines;
             _stack = default;
             _group = default;
             _alternation = default;
@@ -105,8 +101,8 @@ namespace Peachpie.Library.RegularExpressions
             _ignoreNextParen = false;
         }
 
-        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Span<RegexOptions> optionSpan, NewlineTypes bsrNewlines = NewlineTypes.Any)
-            : this(pattern, options, culture, new Dictionary<int, int>(), default, null, optionSpan, bsrNewlines)
+        private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Span<RegexOptions> optionSpan)
+            : this(pattern, options, culture, new Dictionary<int, int>(), default, null, optionSpan)
         {
         }
 
@@ -115,11 +111,11 @@ namespace Peachpie.Library.RegularExpressions
             int end;
             options |= TrimPcreRegexOption(re, out end);
             var pattern = TrimDelimiters(re, end, out var offset);
-            options |= TrimPcreSpecialSequences(ref pattern, out var bsrNewlines);
+            TrimPcreSpecialSequences(ref pattern, ref options);
             var culture = (options & RegexOptions.CultureInvariant) != 0 ? CultureInfo.InvariantCulture : CultureInfo.CurrentCulture;
 
             Span<RegexOptions> optionSpan = stackalloc RegexOptions[OptionStackDefaultSize];
-            var parser = new RegexParser(pattern, options, culture, optionSpan, bsrNewlines);
+            var parser = new RegexParser(pattern, options, culture, optionSpan);
             
             parser._offsetPos = offset;
             parser.CountCaptures();
@@ -226,20 +222,15 @@ namespace Peachpie.Library.RegularExpressions
         /// <summary>
         /// Parse all the special sequences at the start, e.g. (*UTF8)(*BSR_ANYCRLF)
         /// </summary>
-        private static RegexOptions TrimPcreSpecialSequences(ref ReadOnlySpan<char> pattern, out NewlineTypes bsrNewlines)
+        private static void TrimPcreSpecialSequences(ref ReadOnlySpan<char> pattern, ref RegexOptions options)
         {
-            // Default values
-            RegexOptions options = RegexOptions.None;
-            bsrNewlines = NewlineTypes.Any;
-            int start = 0;
-
             // The main parsing loop
-            while (start + 1 < pattern.Length && pattern[start] == '(' && pattern[start + 1] == '*')
+            while (pattern.StartsWith("(*".AsSpan(), StringComparison.Ordinal))
             {
                 bool IsOptionNameChar(char c) => char.IsUpper(c) || char.IsDigit(c) || c == '_';
 
                 // Find the end of the sequence (should be ')')
-                int index = start + 2;
+                int index = 2;
                 while (index < pattern.Length && IsOptionNameChar(pattern[index]))
                 {
                     index++;
@@ -249,7 +240,7 @@ namespace Peachpie.Library.RegularExpressions
                 if (index < pattern.Length && pattern[index] == ')')
                 {
                     // "(*SOME_SEQ)" -> "SOME_SEQ"
-                    var seqSpan = pattern.Slice(start + 2, index - start - 2);
+                    var seqSpan = pattern.Slice(2, index - 2);
 
                     // Try to match the known sequences
                     success = true;
@@ -259,11 +250,11 @@ namespace Peachpie.Library.RegularExpressions
                     }
                     else if (StringExtensions.Equals(seqSpan, "BSR_UNICODE"))
                     {
-                        bsrNewlines = NewlineTypes.Any;
+                        options = options.WithBsrNewlineConvention(RegexOptions.PCRE_BSR_UNICODE);
                     }
                     else if (StringExtensions.Equals(seqSpan, "BSR_ANYCRLF"))
                     {
-                        bsrNewlines = NewlineTypes.AnyCrLf;
+                        options = options.WithBsrNewlineConvention(RegexOptions.PCRE_BSR_ANYCRLF);
                     }
                     else
                     {
@@ -274,22 +265,13 @@ namespace Peachpie.Library.RegularExpressions
 
                 if (success)
                 {
-                    start = index + 1;
+                    pattern = pattern.Slice(index + 1);
                 }
                 else
                 {
                     break;
                 }
             }
-
-            // Trim the pattern if any special sequences were encountered
-            if (start > 0)
-            {
-                pattern = pattern.Slice(start);
-            }
-
-            // Return any parsed options
-            return options;
         }
 
         /// <summary>
@@ -1464,7 +1446,7 @@ namespace Peachpie.Library.RegularExpressions
                     MoveRight();
                     if (scanOnly)
                         return null;
-                    return CreateNewLineParseNode(_bsrNewlines);
+                    return CreateNewLineParseNode((_options & RegexOptions.PCRE_BSR_ANYCRLF) != 0 ? NewlineTypes.AnyCrLf : NewlineTypes.Any);
 
                 default:
                     return ScanBasicBackslash(scanOnly);
