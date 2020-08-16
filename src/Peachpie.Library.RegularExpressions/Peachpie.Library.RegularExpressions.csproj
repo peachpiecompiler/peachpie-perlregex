@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <PackageId>Peachpie.Library.RegularExpressions</PackageId>
     <PackageTags>peachpie;regex;perl;pcre</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -10,7 +10,7 @@
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.3" />
+    <PackageReference Include="System.Memory" Version="4.5.3" Condition=" '$(TargetFramework)'!='netstandard2.1' " />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources\Resource.Designer.cs">
