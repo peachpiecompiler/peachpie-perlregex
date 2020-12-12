@@ -43,6 +43,14 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             Assert.True(match(@"/\pL/u", "a").Success);
         }
+        
+        [Fact]
+        public void TestArabic()
+        {
+            // '/^\p{Arabic}/u', $word
+
+            Assert.True(match(@"/^\p{Arabic}+/u", "إن").Success);
+        }
 
         [Fact]
         public void TestParseException()

@@ -1144,7 +1144,7 @@ namespace Peachpie.Library.RegularExpressions
                 }
             }
 
-            throw new RegexParseException(currentPos, string.Format(SR.UnknownProperty, capname));
+            throw new RegexParseException(currentPos - capname.Length - 1, string.Format(SR.UnknownProperty, capname));
         }
 
 #if DEBUG
