@@ -36,6 +36,15 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
+        public void TestOneLetterCategory()
+        {
+            // preg_match('/\pL/u', 'a')
+            // https://github.com/peachpiecompiler/peachpie/issues/886
+
+            Assert.True(match(@"/\pL/u", "a").Success);
+        }
+
+        [Fact]
         public void TestParseException()
         {
             Assert.Throws<RegexParseException>(() => match("$", "something"));

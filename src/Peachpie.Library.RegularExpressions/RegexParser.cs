@@ -2066,30 +2066,18 @@ namespace Peachpie.Library.RegularExpressions
          */
         private string ParseProperty()
         {
-            if (CharsRight() < 3)
+            if (CharsRight() < 1)
             {
                 throw MakeException(SR.IncompleteSlashP);
             }
-            char ch = RightCharMoveRight();
 
+            var ch = RightCharMoveRight();
             if (ch != '{')
             {
-                //if ("LMZSNPC".IndexOf(ch) >= 0) return ch.ToString();
-
-                switch (ch)
-                {
-                    case 'L':
-                    case 'M':
-                    case 'Z':
-                    case 'S':
-                    case 'N':
-                    case 'P':
-                    case 'C':
-                        // shorthand syntax for \p{Letter}
-                        return ch.ToString();
-                    default:
-                        throw MakeException(SR.MalformedSlashP);
-                }
+                // shorthand syntax for \p{Letter}
+                return "LMZSNPC".IndexOf(ch) >= 0
+                    ? ch.ToString()
+                    : throw MakeException(SR.MalformedSlashP);
             }
 
             int startpos = Textpos();
@@ -2105,7 +2093,9 @@ namespace Peachpie.Library.RegularExpressions
             string capname = _pattern.Slice(startpos, Textpos() - startpos).ToString();
 
             if (CharsRight() == 0 || RightCharMoveRight() != '}')
+            {
                 throw MakeException(SR.IncompleteSlashP);
+            }
 
             return capname;
         }
