@@ -380,5 +380,19 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.Equal(new[] { "foo", "bar" }, match(pairPattern, "foo-\"bar\"").Groups.Skip(1).Select(g => g.Value));
             Assert.Equal(new[] { "foo", "bar" }, match(pairPattern, "\"foo\"-\"bar\"").Groups.Skip(1).Select(g => g.Value));
         }
+
+        [Fact]
+        public void TestNamedBranchResetGroups()
+        {
+            // https://www.regular-expressions.info/branchreset.html
+
+            string namedPattern = "/(?'before'x)(?|abc|(?'left'd)(?'middle'e)(?'right'f)|g(?'left'h)i)(?'after'y)/";
+            Assert.Equal(new[] { "before:x", "left:", "middle:", "right:", "after:y" }, match(namedPattern, "xabcy").Groups.Skip(1).Select(g => $"{g.Name}:{g.Value}"));
+            Assert.Equal(new[] { "before:x", "left:d", "middle:e", "right:f", "after:y" }, match(namedPattern, "xdefy").Groups.Skip(1).Select(g => $"{g.Name}:{g.Value}"));
+            Assert.Equal(new[] { "before:x", "left:h", "middle:", "right:", "after:y" }, match(namedPattern, "xghiy").Groups.Skip(1).Select(g => $"{g.Name}:{g.Value}"));
+
+            string autoNamedPattern = "/(?'before'x)(?|abc|(?'left'd)(?'middle'e)(?'right'f)|g(h)i)(?'after'y)/";
+            Assert.Equal(new[] { "before:x", "left:h", "middle:", "right:", "after:y" }, match(autoNamedPattern, "xghiy").Groups.Skip(1).Select(g => $"{g.Name}:{g.Value}"));
+        }
     }
 }
