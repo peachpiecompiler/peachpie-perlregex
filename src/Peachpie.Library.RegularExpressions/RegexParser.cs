@@ -61,6 +61,16 @@ namespace Peachpie.Library.RegularExpressions
 
         private bool _ignoreNextParen; // flag to skip capturing a parentheses group
 
+        /// <summary>Helper structure to handle the parsing of branch reset groups</summary>
+        private struct BranchResetStackFrame
+        {
+            public int StartAutocap;
+            public int MaxAutocap;
+            public int NestedGroups;
+        }
+
+        private Stack<BranchResetStackFrame> _branchResetStack;
+
         private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Dictionary<int, int> caps, int capsize, Dictionary<string, int> capnames, Span<RegexOptions> optionSpan)
         {
             Debug.Assert(pattern != null, "Pattern must be set");
@@ -88,6 +98,7 @@ namespace Peachpie.Library.RegularExpressions
             _capnumlist = default;
             _capnamelist = default;
             _ignoreNextParen = false;
+            _branchResetStack = default;
         }
 
         private RegexParser(ReadOnlySpan<char> pattern, RegexOptions options, CultureInfo culture, Span<RegexOptions> optionSpan)
@@ -424,6 +435,7 @@ namespace Peachpie.Library.RegularExpressions
             _optionsStack.Length = 0;
             _options = options;
             _stack = null;
+            _branchResetStack?.Clear();
         }
 
         public void Dispose()
@@ -521,12 +533,14 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 PushGroup();
                                 StartGroup(grouper);
+                                TryAddBranchResetNesting();
                             }
                         }
                         continue;
 
                     case '|':
                         AddAlternate();
+                        TryMoveNextBranchResetGroup();
                         goto ContinueOuterScan;
 
                     case ')':
@@ -536,6 +550,7 @@ namespace Peachpie.Library.RegularExpressions
                         AddGroup();
                         PopGroup();
                         PopOptions();
+                        TryRemoveBranchResetNesting();
 
                         if (Unit() == null)
                             goto ContinueOuterScan;
@@ -1114,6 +1129,12 @@ namespace Peachpie.Library.RegularExpressions
                     case '>':
                         // greedy subexpression
                         NodeType = RegexNode.Greedy;
+                        break;
+
+                    case '|':
+                        // branch reset group (handled as a non-capturing group, just influencing _autocap)
+                        NodeType = RegexNode.Group;
+                        StartBranchResetGroup();
                         break;
 
                     case '\'':
@@ -2233,6 +2254,7 @@ namespace Peachpie.Library.RegularExpressions
                     case ')':
                         if (!EmptyOptionsStack())
                             PopOptions();
+                        TryRemoveBranchResetNesting();
                         break;
 
                     case '(':
@@ -2278,6 +2300,14 @@ namespace Peachpie.Library.RegularExpressions
                                         _autocap++;
                                     }
                                 }
+                                else if (CharsRight() > 1 && RightChar() == '|')
+                                {
+                                    MoveRight();
+
+                                    // Branch reset group: (?|...
+                                    StartBranchResetGroup();
+                                    TryAddBranchResetNesting();
+                                }
                                 else
                                 {
                                     // (?...
@@ -2298,6 +2328,10 @@ namespace Peachpie.Library.RegularExpressions
                                             // alternation construct: (?(foo)yes|no)
                                             // ignore the next paren so we don't capture the condition
                                             _ignoreNextParen = true;
+
+                                            // To ensure the match with both corresponding ')'s
+                                            TryAddBranchResetNesting();
+                                            TryAddBranchResetNesting();
 
                                             // break from here so we don't reset _ignoreNextParen
                                             break;
@@ -2322,6 +2356,10 @@ namespace Peachpie.Library.RegularExpressions
 
                         _ignoreNextParen = false;
                         break;
+
+                    case '|':
+                        TryMoveNextBranchResetGroup();
+                        break;
                 }
             }
 
@@ -2345,6 +2383,8 @@ namespace Peachpie.Library.RegularExpressions
                     _captop = i == int.MaxValue ? i : i + 1;
                 }
             }
+
+            TryAddBranchResetNesting();
         }
 
         /*
@@ -2481,6 +2521,86 @@ namespace Peachpie.Library.RegularExpressions
                         continue;
 
                     _lazyCapsReverse.Add(kvp.Value, kvp.Key);
+                }
+            }
+        }
+
+        /// <summary>
+        /// To be called whenever (?|... is encountered. Expects to be followed by <see cref="TryAddBranchResetNesting"/>
+        /// immediately (before any other branch-reset-related method).
+        /// </summary>
+        private void StartBranchResetGroup()
+        {
+            var frame = new BranchResetStackFrame()
+            {
+                StartAutocap = _autocap,
+                MaxAutocap = _autocap,
+                NestedGroups = -1       // Expects to be increased to 0 straightaway (it was the simplest way to implement it in this code...)
+            };
+
+            _branchResetStack ??= new Stack<BranchResetStackFrame>();
+            _branchResetStack.Push(frame);
+        }
+
+        /// <summary>
+        /// To be called whenever '|' is encountered. If '|' divides alternatives inside a branch reset group,
+        /// it resets _autocap to the value at the start of the branch.
+        /// </summary>
+        private void TryMoveNextBranchResetGroup()
+        {
+            if (_branchResetStack != null && _branchResetStack.Count > 0)
+            {
+                var frame = _branchResetStack.Peek();
+                if (frame.NestedGroups == 0)
+                {
+                    _autocap = frame.StartAutocap;
+                }
+            }
+        }
+
+        /// <summary>
+        /// To be called whenever a capture group opening (of any type) is encountered. Helps to identify
+        /// when '|' later discovered belongs to a branch nested group.
+        /// </summary>
+        private void TryAddBranchResetNesting()
+        {
+            if (_branchResetStack != null && _branchResetStack.Count > 0)
+            {
+                var frame = _branchResetStack.Pop();
+                frame.NestedGroups++;
+                _branchResetStack.Push(frame);
+            }
+        }
+
+        /// <summary>
+        /// To be called whenever a capture group closing (of any type) is encountered. Helps to identify
+        /// when '|' later discovered belongs to a branch nested group and also saves and restores the maximum
+        /// value of <see cref="_autocap"/> within the branch reset group.
+        /// </summary>
+        private void TryRemoveBranchResetNesting()
+        {
+            if (_branchResetStack != null && _branchResetStack.Count > 0)
+            {
+                var frame = _branchResetStack.Pop();
+                if (frame.NestedGroups > 0)
+                {
+                    // End of a capture group inside the branch reset group
+                    frame.NestedGroups--;
+                    frame.MaxAutocap = Math.Max(frame.MaxAutocap, _autocap);
+                    _branchResetStack.Push(frame);
+                }
+                else
+                {
+                    // End of the branch reset group itself
+                    _autocap = frame.MaxAutocap;
+
+                    // Propagate the maximal _autocap to one level below if present
+                    if (_branchResetStack.Count > 0)
+                    {
+                        var lowerFrame = _branchResetStack.Pop();
+                        lowerFrame.MaxAutocap = Math.Max(lowerFrame.MaxAutocap, frame.MaxAutocap);
+                        _branchResetStack.Push(lowerFrame);
+                    }
                 }
             }
         }

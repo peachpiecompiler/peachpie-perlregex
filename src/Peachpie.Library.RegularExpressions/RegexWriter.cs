@@ -402,9 +402,15 @@ namespace Peachpie.Library.RegularExpressions
                     break;
 
                 case RegexNode.Capture | BeforeChild:
-                    _capPositions[MapCapnum(node.M)] = _emitted.Length;    // Note that this capture group starts here
-                    Emit(RegexCode.Setmark);
-                    break;
+                    {
+                        int mappedCapnum = MapCapnum(node.M);
+                        if (_capPositions[mappedCapnum] == default)     // Note only the first one in the case of a branch reset group
+                        {
+                            _capPositions[mappedCapnum] = _emitted.Length;    // Note that this capture group starts here
+                        }
+                        Emit(RegexCode.Setmark);
+                        break;
+                    }
 
                 case RegexNode.Capture | AfterChild:
                     Emit(RegexCode.Capturemark, MapCapnum(node.M), MapCapnum(node.N));

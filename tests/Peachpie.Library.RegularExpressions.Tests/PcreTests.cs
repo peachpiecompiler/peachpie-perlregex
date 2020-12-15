@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Peachpie.Library.RegularExpressions.Tests
@@ -302,6 +303,82 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.True(match("/(*CRLF)a\\Z/", "a\r\n").Success);
             Assert.True(match("/(*ANYCRLF)a\\Z/", "a\r\n").Success);
             Assert.True(match("/(*ANY)a\\Z/", "a\r\n").Success);
+        }
+
+        [Fact]
+        public void TestBranchResetGroupsBasic()
+        {
+            // https://www.regular-expressions.info/branchreset.html
+
+            Assert.Equal("a", match("/(?|(a)|(b)|(c))/", "a").Groups.Skip(1).Single().Value);
+            Assert.Equal("b", match("/(?|(a)|(b)|(c))/", "b").Groups.Skip(1).Single().Value);
+            Assert.Equal("c", match("/(?|(a)|(b)|(c))/", "c").Groups.Skip(1).Single().Value);
+
+            Assert.False(match("/(?|(a)|(b)|(c))\\1/", "ab").Success);
+            Assert.Equal(new[] { "a", "a" }, match("/(?|(a)|(b)|(c))(\\1)/", "aa").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "b", "b" }, match("/(?|(a)|(b)|(c))(\\1)/", "bb").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "c", "c" }, match("/(?|(a)|(b)|(c))(\\1)/", "cc").Groups.Skip(1).Select(g => g.Value));
+
+            Assert.True(match("/(?|abc|(d)(e)(f)|g(h)i)/", "abc").Success);
+            Assert.Equal(new[] { "", "", "" }, match("/(?|abc|(d)(e)(f)|g(h)i)/", "abc").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "d", "e", "f" }, match("/(?|abc|(d)(e)(f)|g(h)i)/", "def").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "h", "", "" }, match("/(?|abc|(d)(e)(f)|g(h)i)/", "ghi").Groups.Skip(1).Select(g => g.Value));
+
+            Assert.True(match("/(x)(?|abc|(d)(e)(f)|g(h)i)(y)/", "xabcy").Success);
+            Assert.Equal(new[] { "x", "", "", "", "y" }, match("/(x)(?|abc|(d)(e)(f)|g(h)i)(y)/", "xabcy").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "x", "d", "e", "f", "y" }, match("/(x)(?|abc|(d)(e)(f)|g(h)i)(y)/", "xdefy").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "x", "h", "", "", "y" }, match("/(x)(?|abc|(d)(e)(f)|g(h)i)(y)/", "xghiy").Groups.Skip(1).Select(g => g.Value));
+        }
+
+        [Fact]
+        public void TestBranchResetGroupsSpecial()
+        {
+            // Empty capturing group
+            Assert.True(match("/(?|)abc/", "abc").Success);
+
+            // Double nested
+            Assert.Equal(new[] { "a", "", "f" }, match("/(?|(a)|(?|(x)|(y)(z))|(c))(f)/", "af").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "x", "", "f" }, match("/(?|(a)|(?|(x)|(y)(z))|(c))(f)/", "xf").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "y", "z", "f" }, match("/(?|(a)|(?|(x)|(y)(z))|(c))(f)/", "yzf").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "c", "", "f" }, match("/(?|(a)|(?|(x)|(y)(z))|(c))(f)/", "cf").Groups.Skip(1).Select(g => g.Value));
+
+            // Triple nested
+            Assert.Equal(new[] { "a", "", "", "f" }, match("/(?|(a)|(?|(x)|(?|(v)(w)|(y))(z))|(c))(f)/", "af").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "x", "", "", "f" }, match("/(?|(a)|(?|(x)|(?|(v)(w)|(y))(z))|(c))(f)/", "xf").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "c", "", "", "f" }, match("/(?|(a)|(?|(x)|(?|(v)(w)|(y))(z))|(c))(f)/", "cf").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "v", "w", "z", "f" }, match("/(?|(a)|(?|(x)|(?|(v)(w)|(y))(z))|(c))(f)/", "vwzf").Groups.Skip(1).Select(g => g.Value));
+
+
+            // Subroutine call - from the observed behaviour it uses the group closer to the beginning in the case of ambiguity
+            Assert.True(match("/(?|(a)|(b))(?-1)/", "aa").Success);
+            Assert.True(match("/(?|(a)|(b))(?-1)/", "ba").Success);
+            Assert.False(match("/(?|(a)|(b))(?-1)/", "ab").Success);
+            Assert.False(match("/(?|(a)|(b))(?-1)/", "bb").Success);
+
+            // Alternation if-then-else construct
+            Assert.False(match("/(?<sub>a)?(?|(?(sub)(b)|c)|(d)(e))/", "b").Success);
+            Assert.Equal(new[] { "a", "b", "" }, match("/(?<sub>a)?(?|(?(sub)(b)|c)|(d)(e))/", "ab").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "a", "d", "e" }, match("/(?<sub>a)?(?|(?(sub)(b)|c)|(d)(e))/", "ade").Groups.Skip(1).Select(g => g.Value));
+        }
+
+        [Fact]
+        public void TestBranchResetGroupsComplex()
+        {
+            // Date in m/d or mm/dd format (https://www.regular-expressions.info/branchreset.html)
+            string datePattern = "/^(?|(0?[13578]|1[02])/(3[01]|[12][0-9]|0?[1-9])|(0?[469]|11)/(30|[12][0-9]|0?[1-9])|(0?2)/([12][0-9]|0?[1-9]))$/";
+            Assert.False(match(datePattern, "4/31").Success);
+            Assert.False(match(datePattern, "2/31").Success);
+            Assert.False(match(datePattern, "2/30").Success);
+            Assert.Equal(new[] { "3", "31" }, match(datePattern, "3/31").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "04", "30" }, match(datePattern, "04/30").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "02", "29" }, match(datePattern, "02/29").Groups.Skip(1).Select(g => g.Value));
+
+            // $x-$y, where $x and $y are optionally enclosed in ""
+            string pairPattern = "/^(?|([^\"-]*)|\"([^\"]*)\")-(?|([^\" -]*)|\"([^\"]*)\")\\z/";
+            Assert.Equal(new[] { "foo", "bar" }, match(pairPattern, "foo-bar").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "foo", "bar" }, match(pairPattern, "\"foo\"-bar").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "foo", "bar" }, match(pairPattern, "foo-\"bar\"").Groups.Skip(1).Select(g => g.Value));
+            Assert.Equal(new[] { "foo", "bar" }, match(pairPattern, "\"foo\"-\"bar\"").Groups.Skip(1).Select(g => g.Value));
         }
     }
 }
