@@ -394,5 +394,22 @@ namespace Peachpie.Library.RegularExpressions.Tests
             string autoNamedPattern = "/(?'before'x)(?|abc|(?'left'd)(?'middle'e)(?'right'f)|g(h)i)(?'after'y)/";
             Assert.Equal(new[] { "before:x", "left:h", "middle:", "right:", "after:y" }, match(autoNamedPattern, "xghiy").Groups.Skip(1).Select(g => $"{g.Name}:{g.Value}"));
         }
+
+        [Fact]
+        public void TestDuplicateGroupNames()
+        {
+            Assert.True(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "aa").Success);
+            Assert.True(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "bb").Success);
+            Assert.False(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "ab").Success);
+            Assert.False(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "ba").Success);
+        }
+
+        [Fact]
+        public void TestDuplicateGroupNameCheck()
+        {
+            Assert.Throws<RegexParseException>(() => match("/(?'a'a)(?'a'a)/", "aa"));
+            Assert.True(match("/(?'a'a)(?'a'a)/J", "aa").Success);
+            Assert.True(match("/(?|(?'a'a)|(?'a'b))/", "b").Success);
+        }
     }
 }

@@ -52,10 +52,10 @@ namespace Peachpie.Library.RegularExpressions.Tests
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "xyz", "8978", "abc", "][]12_+-" }
             };
 
-            // FIXME Handle this properly with the PCRE semantics once 'J' flag (PCRE2_DUPNAMES) is implemented
+            // FIXME Handle this properly with the PCRE semantics
             yield return new object[]
             {
-                "/(?<first_name>\\S+)\\s(?<first_name>\\S+)/", "Ryan Byington",
+                "/(?<first_name>\\S+)\\s(?<first_name>\\S+)/J", "Ryan Byington",
                 new string[] { "0", "first_name", "2" },
                 new int[] { 0, 1, 2 },
                 new string[] { "Ryan Byington", "Byington", "" }
@@ -101,10 +101,10 @@ namespace Peachpie.Library.RegularExpressions.Tests
                 new string[] { "abc8978xyz][]12_+-", "abc8978", "xyz", "8978", "abc", "][]12_+-" }
             };
 
-            // FIXME Handle this properly with the PCRE semantics once 'J' flag (PCRE2_DUPNAMES) is implemented
+            // FIXME Handle this properly with the PCRE semantics
             yield return new object[]
             {
-                "/(?'first_name'\\S+)\\s(?'first_name'\\S+)/", "Ryan Byington",
+                "/(?'first_name'\\S+)\\s(?'first_name'\\S+)/J", "Ryan Byington",
                 new string[] { "0", "first_name", "2" },
                 new int[] { 0, 1, 2 },
                 new string[] { "Ryan Byington", "Byington", "" }

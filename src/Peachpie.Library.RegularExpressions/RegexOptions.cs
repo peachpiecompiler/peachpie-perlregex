@@ -45,6 +45,11 @@ namespace Peachpie.Library.RegularExpressions
         /// </summary>
         PCRE_S = 0x8000,                    // S
 
+        /// <summary>
+        /// Allow different capture groups to have the same name (forbidden by default).
+        /// </summary>
+        PCRE2_DUPNAMES = 0x10000,           // J
+
         ///// <summary>
         ///// Evaluate as PHP code.
         ///// Deprecated and removed.

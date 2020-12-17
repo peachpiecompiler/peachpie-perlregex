@@ -2213,6 +2213,9 @@ namespace Peachpie.Library.RegularExpressions
                 case 'X': // PCRE_EXTRA
                     return RegexOptions.PCRE_EXTRA;
 
+                case 'J': // PCRE2_DUPNAMES
+                    return RegexOptions.PCRE2_DUPNAMES;
+
                 default:
                     throw new RegexParseException(offset, string.Format(Resource.modifier_unknown, option.ToString()));
             }
@@ -2398,7 +2401,14 @@ namespace Peachpie.Library.RegularExpressions
                 _capnamelist = new List<string>();
             }
 
-            if (!_capnames.ContainsKey(name))
+            if (_capnames.TryGetValue(name, out int currentPos))
+            {
+                if (currentPos != pos && !UseOptionDupnames())
+                {
+                    throw MakeException(string.Format(SR.DuplicateSubpatternName, name));
+                }
+            }
+            else
             {
                 _capnames.Add(name, pos);
                 _capnamelist.Add(name);
@@ -2676,6 +2686,11 @@ namespace Peachpie.Library.RegularExpressions
         private bool UseOptionExtra()
         {
             return (_options & RegexOptions.PCRE_EXTRA) != 0;
+        }
+
+        private bool UseOptionDupnames()
+        {
+            return (_options & RegexOptions.PCRE2_DUPNAMES) != 0;
         }
 
         private const byte Q = 5;    // quantifier

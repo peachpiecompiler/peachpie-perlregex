@@ -151,6 +151,15 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Two named subpatterns have the same name &apos;{0}&apos; (PCRE2_DUPNAMES not set)..
+        /// </summary>
+        internal static string DuplicateSubpatternName {
+            get {
+                return ResourceManager.GetString("DuplicateSubpatternName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enumeration has either not started or has already finished..
         /// </summary>
         internal static string EnumNotStarted {

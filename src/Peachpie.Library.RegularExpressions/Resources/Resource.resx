@@ -300,4 +300,7 @@
   <data name="InvalidBacktrackingVerb" xml:space="preserve">
     <value>Invalid, unsupported or ill-formed backtracking verb '{0}'.</value>
   </data>
+  <data name="DuplicateSubpatternName" xml:space="preserve">
+    <value>Two named subpatterns have the same name '{0}' (PCRE2_DUPNAMES not set).</value>
+  </data>
 </root>
