@@ -2482,6 +2482,13 @@ namespace Peachpie.Library.RegularExpressions
                     {
                         _capnamelist.Add(oldcapnamelist[k++]);
                         next = (k == oldcapnamelist.Count) ? -1 : (int)_capnames[oldcapnamelist[k]];
+
+                        if (next != -1 && next <= j)
+                        {
+                            // Two captures with different names refer to the same index
+                            // (next would never be reached due to the increasing j)
+                            throw MakeException(string.Format(SR.DifferentSubpatternNames, k));
+                        }
                     }
                     else
                     {

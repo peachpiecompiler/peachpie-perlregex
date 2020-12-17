@@ -303,4 +303,7 @@
   <data name="DuplicateSubpatternName" xml:space="preserve">
     <value>Two named subpatterns have the same name '{0}' (PCRE2_DUPNAMES not set).</value>
   </data>
+  <data name="DifferentSubpatternNames" xml:space="preserve">
+    <value>Different names for subpatterns of the same number ({0}) are not allowed.</value>
+  </data>
 </root>

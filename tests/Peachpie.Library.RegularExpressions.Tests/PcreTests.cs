@@ -411,5 +411,14 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.True(match("/(?'a'a)(?'a'a)/J", "aa").Success);
             Assert.True(match("/(?|(?'a'a)|(?'a'b))/", "b").Success);
         }
+
+        [Fact]
+        public void TestDifferentGroupNameCheck()
+        {
+            Assert.Throws<RegexParseException>(() => match("/(?|(?'a'a)|(?'b'b))/", ""));
+            Assert.Throws<RegexParseException>(() => match("/(?|(?'a'a)|(?'b'b))/J", ""));
+            Assert.Throws<RegexParseException>(() => match("/(?'pre'p)(?|(?'a'a)|(?'b'b))(?'post'p)/", ""));
+            Assert.Throws<RegexParseException>(() => match("/(?'before'x)(?|abc|(?'left'd)(?'middle'e)(?'right'f)|g(?'notleft'h)i)(?'after'y)/", ""));
+        }
     }
 }

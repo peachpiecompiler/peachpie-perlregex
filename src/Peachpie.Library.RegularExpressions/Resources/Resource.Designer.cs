@@ -151,6 +151,15 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Different names for subpatterns of the same number ({0}) are not allowed..
+        /// </summary>
+        internal static string DifferentSubpatternNames {
+            get {
+                return ResourceManager.GetString("DifferentSubpatternNames", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Two named subpatterns have the same name &apos;{0}&apos; (PCRE2_DUPNAMES not set)..
         /// </summary>
         internal static string DuplicateSubpatternName {
