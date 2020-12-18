@@ -3,7 +3,7 @@
   <PropertyGroup>
 
     <!-- version -->
-    <Version Condition=" '$(Version)'=='' ">1.4.0</Version>
+    <Version Condition=" '$(Version)'=='' ">1.5.0</Version>
     <PackageVersion>$(Version)</PackageVersion>
 
     <!-- metadata generation -->
@@ -31,7 +31,7 @@
     <RepositoryUrl>https://github.com/peachpiecompiler/peachpie-perlregex</RepositoryUrl>
     <PackageProjectUrl>https://github.com/peachpiecompiler/peachpie-perlregex</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageOutputPath>$(MSBuildThisFileDirectory)output</PackageOutputPath>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts</PackageOutputPath>
     <PackageIconUrl>https://github.com/peachpiecompiler/peachpie/raw/master/docs/logos/round-orange-196x196.png</PackageIconUrl>
   </PropertyGroup>
 
