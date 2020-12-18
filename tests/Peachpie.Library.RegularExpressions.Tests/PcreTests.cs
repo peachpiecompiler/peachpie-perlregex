@@ -396,12 +396,29 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
-        public void TestDuplicateGroupNames()
+        public void TestDuplicateGroupNamesBasic()
         {
+            // Named reference in a simple case (both groups share a number)
             Assert.True(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "aa").Success);
             Assert.True(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "bb").Success);
             Assert.False(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "ab").Success);
             Assert.False(match("/(?:(?'a'a)|(?'a'b))\\k'a'/J", "ba").Success);
+        }
+
+        [Fact(Skip="Not implemented")]
+        public void TestDuplicateGroupNamesSpecial()
+        {
+            // TODO: Currently not implemented (needs significant changes in various places)
+
+            // Keep both groups as separate numbers
+            var m = match("/(?<first_name>\\S+)\\s(?<first_name>\\S+)/J", "John Doe");
+            Assert.Equal(new[] { "0", "first_name", "first_name" }, m.Groups.Select(g => g.Name));
+            Assert.Equal(new[] { 0, 1, 2 }, m.Groups.Select(g => g.Id));
+            Assert.Equal(new[] { "John Doe", "John", "Doe" }, m.Groups.Select(g => g.Value));
+
+            // Use the first one matched
+            Assert.True(match("/^(?<n>foo)?(?<n>bar)?\\k<n>$/J", "foobarfoo").Success);
+            Assert.False(match("/^(?<n>foo)?(?<n>bar)?\\k<n>$/J", "foobarbar").Success);
         }
 
         [Fact]
