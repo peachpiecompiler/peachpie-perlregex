@@ -1921,32 +1921,48 @@ namespace Peachpie.Library.RegularExpressions
                 else
                 {
                     MoveLeft();
-                    return ScanHex(2);
+                    return ScanHex(0, 2);
                 }
             }
 
             throw MakeException(SR.TooFewHex);
         }
 
-        /*
-         * Scans exactly c hex digits (c=2 for \xFF, c=4 for \uFFFF)
-         */
-        private char ScanHex(int c)
-        {
-            int i = 0;
-            int d;
+        /// <summary>
+        /// Scans exactly <paramref name="c"/> characters.
+        /// </summary>
+        /// <param name="c">How many characters will be read.</param>
+        /// <returns>Parsed character from hex number.</returns>
+        private char ScanHex(int c) => ScanHex(c, c);
 
-            if (CharsRight() >= c)
+        /*
+         * Scans between lc and hc hex digits (c=2 for \xFF, c=4 for \uFFFF)
+         */
+        private char ScanHex(int lc, int hc)
+        {
+            Debug.Assert(lc <= hc);
+
+            int c = 0;
+            int i = 0;
+
+            for (; c < hc && CharsRight() > 0; c++)
             {
-                for (; c > 0 && ((d = HexDigit(RightCharMoveRight())) >= 0); c -= 1)
+                var d = HexDigit(RightCharMoveRight());
+                if (d >= 0)
                 {
-                    i *= 0x10;
-                    i += d;
+                    i = d + (i * 0x10);
+                }
+                else
+                {
+                    MoveLeft();
+                    break;
                 }
             }
 
-            if (c > 0)
+            if (c < lc)
+            {
                 throw MakeException(SR.TooFewHex);
+            }
 
             return (char)i;
         }

@@ -35,6 +35,12 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             match(@"/^[\x{9}\x{A}\x{D}\x{20}-\x{7E}\x{A0}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]*$/Du", "");
         }
+        
+        [Fact]
+        public void TestHexDigits()
+        {
+            Assert.True(match(@"/^[\x0-\x7f]*$/", "ABC").Success);
+        }
 
         [Fact]
         public void TestOneLetterCategory()
