@@ -925,18 +925,35 @@ namespace Peachpie.Library.RegularExpressions
                     inRange = false;
                     if (!scanOnly)
                     {
+                        bool processed = false;
                         if (ch == '[' && !fTranslatedChar && !firstChar)
                         {
                             // We thought we were in a range, but we're actually starting a subtraction.
                             // In that case, we'll add chPrev to our char class, skip the opening [, and
-                            // scan the new character class recursively.
-                            cc.AddChar(chPrev);
-                            cc.AddSubtraction(ScanCharClass(caseInsensitive, scanOnly));
+                            // scan the new character class recursively. If the subtraction class is
+                            // invalid, we assume that it was not intended, as PCRE has no subtractions.
+
+                            // Back up the current text position
+                            int subStartPos = Textpos();
+
+                            // Scan the supposed subtraction
+                            var subtracted = ScanCharClass(caseInsensitive, scanOnly);
 
                             if (CharsRight() > 0 && RightChar() != ']')
-                                throw MakeException(SR.SubtractionMustBeLast);
+                            {
+                                // If the subtraction is invalid, rollback to the previous text position
+                                // and treat '[' as any other character
+                                Textto(subStartPos);
+                            }
+                            else
+                            {
+                                cc.AddChar(chPrev);
+                                cc.AddSubtraction(subtracted);
+                                processed = true;
+                            }
                         }
-                        else
+
+                        if (!processed)
                         {
                             // a regular range, like a-z
                             if (chPrev > ch)

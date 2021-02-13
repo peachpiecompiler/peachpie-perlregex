@@ -443,5 +443,23 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.Throws<RegexParseException>(() => match("/(?'pre'p)(?|(?'a'a)|(?'b'b))(?'post'p)/", ""));
             Assert.Throws<RegexParseException>(() => match("/(?'before'x)(?|abc|(?'left'd)(?'middle'e)(?'right'f)|g(?'notleft'h)i)(?'after'y)/", ""));
         }
+
+        [Fact]
+        public void TestSeemingCharacterClassSubtraction()
+        {
+            string pattern = @"/^[ !#-[\]-~]*\z/";
+
+            Assert.True(match(pattern, " ").Success);
+            Assert.True(match(pattern, "!").Success);
+            Assert.True(match(pattern, "#").Success);
+            Assert.True(match(pattern, ".").Success);
+            Assert.True(match(pattern, "[").Success);
+            Assert.True(match(pattern, "]").Success);
+            Assert.True(match(pattern, "{]").Success);
+            Assert.True(match(pattern, "~").Success);
+            Assert.False(match(pattern, "\0").Success);
+            Assert.False(match(pattern, @"\").Success);
+            Assert.False(match(pattern, "\"").Success);
+        }
     }
 }
