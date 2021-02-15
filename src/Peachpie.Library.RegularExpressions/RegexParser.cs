@@ -1115,6 +1115,23 @@ namespace Peachpie.Library.RegularExpressions
 
                 return new RegexNode(RegexNode.CallSubroutine, _options, groupIndex.Value);
             }
+            else if (CharsRight() >= 2 && RightChar() == '&' && RegexCharClass.IsWordChar(RightChar(1))) // Named subroutine call
+            {
+                MoveRight();
+                string subpatternName = ScanCapname();
+
+                if (CharsRight() == 0 || RightCharMoveRight() != ')')
+                {
+                    goto BreakRecognize;
+                }
+
+                if (!IsCaptureName(subpatternName, out int subpatternIndex))
+                {
+                    throw MakeException(string.Format(SR.UndefinedSubpattern, subpatternName));
+                }
+
+                return new RegexNode(RegexNode.CallSubroutine, _options, subpatternIndex);
+            }
 
             while (true)
             {
@@ -1298,6 +1315,7 @@ namespace Peachpie.Library.RegularExpressions
 
                                 if (IsCaptureName(capname, out var slot) && CharsRight() > 0 && RightCharMoveRight() == ')')
                                     return new RegexNode(RegexNode.Testref, _options, slot);
+
                             }
                         }
                         // not a backref

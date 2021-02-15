@@ -88,6 +88,18 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
+        public void TestNamedSubRoutines()
+        {
+            string pattern = @"/(?(DEFINE)(?<V>[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*+))^(?&V)(?:\\(?&V))*+(?: \$(?&V))?$/";
+
+            Assert.True(match(pattern, "MyClass").Success);
+            Assert.True(match(pattern, @"Namespace\MyClass").Success);
+            Assert.True(match(pattern, @"Namespace\My_Class2").Success);
+            Assert.False(match(pattern, "2MyClass").Success);
+            Assert.False(match(pattern, @"MyClass\").Success);
+        }
+
+        [Fact]
         public void TestReplace()
         {
             // In replacement: "\\" -> "\"
