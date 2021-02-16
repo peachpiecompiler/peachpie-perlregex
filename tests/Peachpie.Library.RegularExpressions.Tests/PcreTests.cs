@@ -9,7 +9,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
     {
         static Match match(string pattern, string subject, int startat = 0)
         {
-            return new Regex(pattern, RegexOptions.Debug).Match(subject, startat);
+            return new Regex(pattern).Match(subject, startat);
         }
 
         static string replace(string pattern, string replacement, string subject)
