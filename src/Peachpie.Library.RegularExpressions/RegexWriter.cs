@@ -519,6 +519,22 @@ namespace Peachpie.Library.RegularExpressions
                     Emit(node.M);
                     break;
 
+                case RegexNode.DefinitionGroup | BeforeChild:
+                    if (curIndex == 0)
+                    {
+                        // Skip any matching inside (?(DEFINE)...)
+                        _intStack.Append(_emitted.Length);
+                        Emit(RegexCode.Goto, 0);
+                    }
+                    break;
+
+                case RegexNode.DefinitionGroup | AfterChild:
+                    if (curIndex == node.Children.Count - 1)
+                    {
+                        PatchJump(_intStack.Pop(), _emitted.Length);
+                    }
+                    break;
+
                 default:
                     throw new ArgumentException(string.Format(SR.UnexpectedOpcode, nodetype.ToString()));
             }

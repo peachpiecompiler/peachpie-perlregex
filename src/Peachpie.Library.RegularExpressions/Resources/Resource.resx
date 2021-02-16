@@ -306,4 +306,7 @@
   <data name="DifferentSubpatternNames" xml:space="preserve">
     <value>Different names for subpatterns of the same number ({0}) are not allowed.</value>
   </data>
+  <data name="DefineMoreThanOneBranch" xml:space="preserve">
+    <value>DEFINE subpattern contains more than one branch.</value>
+  </data>
 </root>

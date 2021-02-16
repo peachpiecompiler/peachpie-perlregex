@@ -9,7 +9,7 @@ namespace Peachpie.Library.RegularExpressions.Tests
     {
         static Match match(string pattern, string subject, int startat = 0)
         {
-            return new Regex(pattern).Match(subject, startat);
+            return new Regex(pattern, RegexOptions.Debug).Match(subject, startat);
         }
 
         static string replace(string pattern, string replacement, string subject)
@@ -97,6 +97,18 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.True(match(pattern, @"Namespace\My_Class2").Success);
             Assert.False(match(pattern, "2MyClass").Success);
             Assert.False(match(pattern, @"MyClass\").Success);
+        }
+
+        [Fact]
+        public void TestSubRoutineDefinitionConstruct()
+        {
+            Assert.True(match(@"/(?(DEFINE))/", "").Success);
+            Assert.True(match(@"/(?(DEFINE)a)/", "").Success);
+            Assert.True(match(@"/(?(DEFINE)a)b/", "b").Success);
+            Assert.False(match(@"/(?(DEFINE)a)^b/", "ab").Success);
+            Assert.True(match(@"/(?(DEFINE)(?<foo>abc|def))(?&foo)(?&foo)/", "abcdef").Success);
+            Assert.Throws<RegexParseException>(() => match("/(?(DEFINE)a|b)/", "a"));
+            Assert.Throws<RegexParseException>(() => match("/(?(DEFINE)a|b|c)/", "a"));
         }
 
         [Fact]

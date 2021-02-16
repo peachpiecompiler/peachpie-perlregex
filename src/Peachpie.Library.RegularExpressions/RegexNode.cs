@@ -105,6 +105,8 @@ namespace Peachpie.Library.RegularExpressions
         public const int Testref = 33;                                //          (?(n) | )  - alternation, reference
         public const int Testgroup = 34;                              //          (?(...) | )- alternation, expression
 
+        public const int DefinitionGroup = 35;                        //          (?(DEFINE)...) - subpattern definition construct
+
         public int NType;
         public List<RegexNode> Children;
         public string Str;
@@ -581,14 +583,15 @@ namespace Peachpie.Library.RegularExpressions
             "One", "Notone", "Set",
             "Multi", "Ref",
             "Bol", "Eol", "Boundary", "Nonboundary",
-            "ECMABoundary", "NonECMABoundary",
             "Beginning", "Start", "EndZ", "End",
             "Nothing", "Empty",
             "Alternate", "Concatenate",
             "Loop", "Lazyloop",
             "Capture", "Group", "Require", "Prevent", "Greedy",
             "Testref", "Testgroup",
-            null, null, null, null, null, null, null, null,
+            "DefinitionGroup",
+            null, null, null, null, null,
+            "ECMABoundary", "NonECMABoundary",
             "ResetMatchStart", "CallSubroutine", "BacktrackingVerb"};
 
         private string Description()

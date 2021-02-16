@@ -142,6 +142,15 @@ namespace Peachpie.Library.RegularExpressions.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DEFINE subpattern contains more than one branch..
+        /// </summary>
+        internal static string DefineMoreThanOneBranch {
+            get {
+                return ResourceManager.GetString("DefineMoreThanOneBranch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Delimiter must not be alphanumeric or backslash.
         /// </summary>
         internal static string delimiter_alnum_backslash {

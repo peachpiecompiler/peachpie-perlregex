@@ -456,12 +456,14 @@ namespace Peachpie.Library.RegularExpressions
 
                 case RegexNode.Require | BeforeChild:
                 case RegexNode.Prevent | BeforeChild:
+                case RegexNode.DefinitionGroup | BeforeChild:
                     SkipChild();
                     PushFC(new RegexFC(true));
                     break;
 
                 case RegexNode.Require | AfterChild:
                 case RegexNode.Prevent | AfterChild:
+                case RegexNode.DefinitionGroup | AfterChild:
                     break;
 
                 case RegexNode.One:

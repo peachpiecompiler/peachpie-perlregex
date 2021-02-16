@@ -1313,9 +1313,15 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 string capname = ScanCapname();
 
+                                // (?(DEFINE)...)
+                                if (capname == "DEFINE" && CharsRight() > 0 && RightChar() == ')')
+                                {
+                                    MoveRight();
+                                    return new RegexNode(RegexNode.DefinitionGroup, _options);
+                                }
+
                                 if (IsCaptureName(capname, out var slot) && CharsRight() > 0 && RightCharMoveRight() == ')')
                                     return new RegexNode(RegexNode.Testref, _options, slot);
-
                             }
                         }
                         // not a backref
@@ -3048,6 +3054,12 @@ namespace Peachpie.Library.RegularExpressions
             else
             {
                 _alternation.AddChild(_concatenation.ReverseLeft());
+
+                if (_group.Type() == RegexNode.DefinitionGroup && _alternation.ChildCount() > 1)
+                {
+                    throw MakeException(SR.DefineMoreThanOneBranch);
+                }
+
                 _group.AddChild(_alternation);
             }
 
