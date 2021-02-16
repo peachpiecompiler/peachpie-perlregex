@@ -220,79 +220,79 @@ namespace Peachpie.Library.RegularExpressions.Tests
             yield return new object[] { "/(?(a:))/", "a", RegexOptions.None, 0, 1, true, string.Empty };
 
             // No Negation
-            yield return new object[] { "/[abcd-[abcd]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { "/[1234-[1234]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![abcd])[abcd])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![1234])[1234])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // All Negation
-            yield return new object[] { "/[^abcd-[^abcd]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { "/[^1234-[^1234]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![^abcd])[^abcd])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![^1234])[^1234])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // No Negation
-            yield return new object[] { "/[a-z-[a-z]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { "/[0-9-[0-9]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![a-z])[a-z])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![0-9])[0-9])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // All Negation
-            yield return new object[] { "/[^a-z-[^a-z]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { "/[^0-9-[^0-9]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![^a-z])[^a-z])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { "/(?:(?![^0-9])[^0-9])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // No Negation
-            yield return new object[] { @"/[\w-[\w]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\W-[\W]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\s-[\s]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\S-[\S]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\d-[\d]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\D-[\D]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\w)[\w])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\W)[\W])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\s)[\s])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\S)[\S])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\d)[\d])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\D)[\D])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // All Negation
-            yield return new object[] { @"/[^\w-[^\w]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\W-[^\W]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\s-[^\s]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\S-[^\S]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\d-[^\d]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\D-[^\D]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\w])[^\w])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\W])[^\W])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\s])[^\s])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\S])[^\S])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\d])[^\d])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\D])[^\D])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // MixedNegation
-            yield return new object[] { @"/[^\w-[\W]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\w-[^\W]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\s-[\S]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\s-[^\S]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\d-[\D]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\d-[^\D]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\W)[^\w])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\W])[\w])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\S)[^\s])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\S])[\s])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?!\D)[^\d])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\D])[\d])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // No Negation
-            yield return new object[] { @"/[\p{Ll}-[\p{Ll}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\P{Ll}-[\P{Ll}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\p{Lu}-[\p{Lu}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\P{Lu}-[\P{Lu}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\p{Nd}-[\p{Nd}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\P{Nd}-[\P{Nd}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\p{Ll}])[\p{Ll}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\P{Ll}])[\P{Ll}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\p{Lu}])[\p{Lu}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\P{Lu}])[\P{Lu}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\p{Nd}])[\p{Nd}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\P{Nd}])[\P{Nd}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // All Negation
-            yield return new object[] { @"/[^\p{Ll}-[^\p{Ll}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\P{Ll}-[^\P{Ll}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\p{Lu}-[^\p{Lu}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\P{Lu}-[^\P{Lu}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\p{Nd}-[^\p{Nd}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\P{Nd}-[^\P{Nd}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\p{Ll}])[^\p{Ll}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\P{Ll}])[^\P{Ll}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\p{Lu}])[^\p{Lu}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\P{Lu}])[^\P{Lu}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\p{Nd}])[^\p{Nd}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\P{Nd}])[^\P{Nd}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
             // MixedNegation
-            yield return new object[] { @"/[^\p{Ll}-[\P{Ll}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\p{Ll}-[^\P{Ll}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\p{Lu}-[\P{Lu}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\p{Lu}-[^\P{Lu}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[^\p{Nd}-[\P{Nd}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
-            yield return new object[] { @"/[\p{Nd}-[^\P{Nd}]]+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\P{Ll}])[^\p{Ll}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\P{Ll}])[\p{Ll}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\P{Lu}])[^\p{Lu}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\P{Lu}])[\p{Lu}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![\P{Nd}])[^\p{Nd}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
+            yield return new object[] { @"/(?:(?![^\P{Nd}])[\p{Nd}])+/", "abcxyzABCXYZ`!@#$%^&*()_-+= \t\n", RegexOptions.None, 0, 30, false, string.Empty };
 
-            // Character Class Substraction
-            yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "[]]", RegexOptions.None, 0, 3, false, string.Empty };
-            yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "-]]", RegexOptions.None, 0, 3, false, string.Empty };
-            yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "`]]", RegexOptions.None, 0, 3, false, string.Empty };
-            yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "e]]", RegexOptions.None, 0, 3, false, string.Empty };
+            // Character Class Substraction - not supported in PCRE
+            //yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "[]]", RegexOptions.None, 0, 3, false, string.Empty };
+            //yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "-]]", RegexOptions.None, 0, 3, false, string.Empty };
+            //yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "`]]", RegexOptions.None, 0, 3, false, string.Empty };
+            //yield return new object[] { @"/[ab\-\[cd-[-[]]]]/", "e]]", RegexOptions.None, 0, 3, false, string.Empty };
 
-            yield return new object[] { @"/[ab\-\[cd-[[]]]]/", "']]", RegexOptions.None, 0, 3, false, string.Empty };
-            yield return new object[] { @"/[ab\-\[cd-[[]]]]/", "e]]", RegexOptions.None, 0, 3, false, string.Empty };
+            //yield return new object[] { @"/[ab\-\[cd-[[]]]]/", "']]", RegexOptions.None, 0, 3, false, string.Empty };
+            //yield return new object[] { @"/[ab\-\[cd-[[]]]]/", "e]]", RegexOptions.None, 0, 3, false, string.Empty };
 
-            yield return new object[] { @"/[a-[a-f]]/", "abcdefghijklmnopqrstuvwxyz", RegexOptions.None, 0, 26, false, string.Empty };
+            yield return new object[] { @"/(?:(?![a-f])[a])/", "abcdefghijklmnopqrstuvwxyz", RegexOptions.None, 0, 26, false, string.Empty };
 
             // \c
             yield return new object[] { @"/(cat)(\c[*)(dog)/", "asdlkcat\u00FFdogiwod", RegexOptions.None, 0, 15, false, string.Empty };   // \c[* doesn't work due to preliminary capture scan

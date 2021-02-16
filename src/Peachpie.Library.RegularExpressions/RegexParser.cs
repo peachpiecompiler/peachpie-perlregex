@@ -925,41 +925,10 @@ namespace Peachpie.Library.RegularExpressions
                     inRange = false;
                     if (!scanOnly)
                     {
-                        bool processed = false;
-                        if (ch == '[' && !fTranslatedChar && !firstChar)
-                        {
-                            // We thought we were in a range, but we're actually starting a subtraction.
-                            // In that case, we'll add chPrev to our char class, skip the opening [, and
-                            // scan the new character class recursively. If the subtraction class is
-                            // invalid, we assume that it was not intended, as PCRE has no subtractions.
-
-                            // Back up the current text position
-                            int subStartPos = Textpos();
-
-                            // Scan the supposed subtraction
-                            var subtracted = ScanCharClass(caseInsensitive, scanOnly);
-
-                            if (CharsRight() > 0 && RightChar() != ']')
-                            {
-                                // If the subtraction is invalid, rollback to the previous text position
-                                // and treat '[' as any other character
-                                Textto(subStartPos);
-                            }
-                            else
-                            {
-                                cc.AddChar(chPrev);
-                                cc.AddSubtraction(subtracted);
-                                processed = true;
-                            }
-                        }
-
-                        if (!processed)
-                        {
-                            // a regular range, like a-z
-                            if (chPrev > ch)
-                                throw MakeException(SR.ReversedCharRange);
-                            cc.AddRange(chPrev, ch);
-                        }
+                        // a regular range, like a-z
+                        if (chPrev > ch)
+                            throw MakeException(SR.ReversedCharRange);
+                        cc.AddRange(chPrev, ch);
                     }
                 }
                 else if (CharsRight() >= 2 && RightChar() == '-' && RightChar(1) != ']')
@@ -968,24 +937,6 @@ namespace Peachpie.Library.RegularExpressions
                     chPrev = ch;
                     inRange = true;
                     MoveRight();
-                }
-                else if (CharsRight() >= 1 && ch == '-' && !fTranslatedChar && RightChar() == '[' && !firstChar)
-                {
-                    // we aren't in a range, and now there is a subtraction.  Usually this happens
-                    // only when a subtraction follows a range, like [a-z-[b]]
-                    if (!scanOnly)
-                    {
-                        MoveRight(1);
-                        cc.AddSubtraction(ScanCharClass(caseInsensitive, scanOnly));
-
-                        if (CharsRight() > 0 && RightChar() != ']')
-                            throw MakeException(SR.SubtractionMustBeLast);
-                    }
-                    else
-                    {
-                        MoveRight(1);
-                        ScanCharClass(caseInsensitive, scanOnly);
-                    }
                 }
                 else
                 {

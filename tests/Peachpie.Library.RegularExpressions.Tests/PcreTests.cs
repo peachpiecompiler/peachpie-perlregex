@@ -498,5 +498,15 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.False(match(pattern, @"\").Success);
             Assert.False(match(pattern, "\"").Success);
         }
+
+        [Fact]
+        public void TestNotSupportedCharacterClassSubtraction()
+        {
+            Assert.False(match(@"/[a-z-[aeiuo]]/", "b").Success);
+            Assert.False(match(@"/[a-z#-[aeiuo]]/", "b").Success);
+            Assert.True(match(@"/[a-z-[aeiuo]]/", "-]").Success);
+            Assert.True(match(@"/[a-z#-[aeiuo]]/", "-]").Success);
+            Assert.True(match(@"/[a-z#-[aeiuo]]/", "#]").Success);
+        }
     }
 }

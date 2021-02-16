@@ -403,7 +403,6 @@ namespace Peachpie.Library.RegularExpressions
         private readonly StringBuilder _categories;
         private bool _canonical;
         private bool _negate;
-        private RegexCharClass _subtractor;
 
 #if DEBUG
         static RegexCharClass()
@@ -433,20 +432,19 @@ namespace Peachpie.Library.RegularExpressions
             _categories = new StringBuilder();
         }
 
-        private RegexCharClass(bool negate, List<SingleRange> ranges, StringBuilder categories, RegexCharClass subtraction)
+        private RegexCharClass(bool negate, List<SingleRange> ranges, StringBuilder categories)
         {
             _rangelist = ranges;
             _categories = categories;
             _canonical = true;
             _negate = negate;
-            _subtractor = subtraction;
         }
 
         public bool CanMerge
         {
             get
             {
-                return !_negate && _subtractor == null;
+                return !_negate;
             }
         }
 
@@ -505,12 +503,6 @@ namespace Peachpie.Library.RegularExpressions
             {
                 _rangelist.Add(new SingleRange(set[i], LastChar));
             }
-        }
-
-        public void AddSubtraction(RegexCharClass sub)
-        {
-            Debug.Assert(_subtractor == null, "Can't add two subtractions to a char class. ");
-            _subtractor = sub;
         }
 
         /// <summary>
@@ -715,12 +707,14 @@ namespace Peachpie.Library.RegularExpressions
 
         public static bool IsMergeable(string charClass)
         {
-            return (!IsNegated(charClass) && !IsSubtraction(charClass));
+            Debug.Assert(!IsSubtraction(charClass));
+            return !IsNegated(charClass);
         }
 
         public static bool IsEmpty(string charClass)
         {
-            return (charClass[CATEGORYLENGTH] == 0 && charClass[FLAGS] == 0 && charClass[SETLENGTH] == 0 && !IsSubtraction(charClass));
+            Debug.Assert(!IsSubtraction(charClass));
+            return (charClass[CATEGORYLENGTH] == 0 && charClass[FLAGS] == 0 && charClass[SETLENGTH] == 0);
         }
 
         /// <summary>
@@ -728,7 +722,8 @@ namespace Peachpie.Library.RegularExpressions
         /// </summary>
         public static bool IsSingleton(string set)
         {
-            if (set[FLAGS] == 0 && set[CATEGORYLENGTH] == 0 && set[SETLENGTH] == 2 && !IsSubtraction(set) &&
+            Debug.Assert(!IsSubtraction(set));
+            if (set[FLAGS] == 0 && set[CATEGORYLENGTH] == 0 && set[SETLENGTH] == 2 &&
                 (set[SETSTART] == LastChar || set[SETSTART] + 1 == set[SETSTART + 1]))
                 return true;
             else
@@ -737,13 +732,17 @@ namespace Peachpie.Library.RegularExpressions
 
         public static bool IsSingletonInverse(string set)
         {
-            if (set[FLAGS] == 1 && set[CATEGORYLENGTH] == 0 && set[SETLENGTH] == 2 && !IsSubtraction(set) &&
+            Debug.Assert(!IsSubtraction(set));
+            if (set[FLAGS] == 1 && set[CATEGORYLENGTH] == 0 && set[SETLENGTH] == 2 &&
                 (set[SETSTART] == LastChar || set[SETSTART] + 1 == set[SETSTART + 1]))
                 return true;
             else
                 return false;
         }
 
+        /// <remarks>
+        /// Character class subtraction is not supported, used just in assertions in a regressive test fashion.
+        /// </remarks>
         private static bool IsSubtraction(string charClass)
         {
             return (charClass.Length > SETSTART + charClass[SETLENGTH] + charClass[CATEGORYLENGTH]);
@@ -775,42 +774,32 @@ namespace Peachpie.Library.RegularExpressions
 
         public static bool CharInClass(char ch, string set)
         {
-            return CharInClassRecursive(ch, set, 0);
-        }
+            int mySetLength = set[SETLENGTH];
+            int myCategoryLength = set[CATEGORYLENGTH];
+            int myEndPosition = SETSTART + mySetLength + myCategoryLength;
 
-        private static bool CharInClassRecursive(char ch, string set, int start)
-        {
-            int mySetLength = set[start + SETLENGTH];
-            int myCategoryLength = set[start + CATEGORYLENGTH];
-            int myEndPosition = start + SETSTART + mySetLength + myCategoryLength;
+            Debug.Assert(set.Length == myEndPosition);
 
-            bool subtracted = false;
-
-            if (set.Length > myEndPosition)
-            {
-                subtracted = CharInClassRecursive(ch, set, myEndPosition);
-            }
-
-            bool b = CharInClassInternal(ch, set, start, mySetLength, myCategoryLength);
+            bool b = CharInClassInternal(ch, set, mySetLength, myCategoryLength);
 
             // Note that we apply the negation *before* performing the subtraction.  This is because
             // the negation only applies to the first char class, not the entire subtraction.
-            if (set[start + FLAGS] == 1)
+            if (set[FLAGS] == 1)
                 b = !b;
 
-            return b && !subtracted;
+            return b;
         }
 
         /// <summary>
         /// Determines a character's membership in a character class (via the
         /// string representation of the class).
         /// </summary>
-        private static bool CharInClassInternal(char ch, string set, int start, int mySetLength, int myCategoryLength)
+        private static bool CharInClassInternal(char ch, string set, int mySetLength, int myCategoryLength)
         {
             int min;
             int max;
             int mid;
-            min = start + SETSTART;
+            min = SETSTART;
             max = min + mySetLength;
 
             while (min != max)
@@ -829,22 +818,22 @@ namespace Peachpie.Library.RegularExpressions
             // SETSTART is odd, we can simplify it out of the equation.  But if it changes we need to
             // reverse this check.
             Debug.Assert((SETSTART & 0x1) == 1, "If SETSTART is not odd, the calculation below this will be reversed");
-            if ((min & 0x1) == (start & 0x1))
+            if ((min & 0x1) == 0)       // Note: originally ((min & 0x1) == (start & 0x1)), but start is always 0
                 return true;
             else
             {
                 if (myCategoryLength == 0)
                     return false;
 
-                return CharInCategory(ch, set, start, mySetLength, myCategoryLength);
+                return CharInCategory(ch, set, mySetLength, myCategoryLength);
             }
         }
 
-        private static bool CharInCategory(char ch, string set, int start, int mySetLength, int myCategoryLength)
+        private static bool CharInCategory(char ch, string set, int mySetLength, int myCategoryLength)
         {
             UnicodeCategory chcategory = CharUnicodeInfo.GetUnicodeCategory(ch);
 
-            int i = start + SETSTART + mySetLength;
+            int i = SETSTART + mySetLength;
             int end = i + myCategoryLength;
             while (i < end)
             {
@@ -993,11 +982,9 @@ namespace Peachpie.Library.RegularExpressions
                 ranges.Add(new SingleRange(first, last));
             }
 
-            RegexCharClass sub = null;
-            if (charClass.Length > myEndPosition)
-                sub = ParseRecursive(charClass, myEndPosition);
+            Debug.Assert(charClass.Length == myEndPosition);
 
-            return new RegexCharClass(charClass[start + FLAGS] == 1, ranges, new StringBuilder(charClass.Substring(end, myCategoryLength)), sub);
+            return new RegexCharClass(charClass[start + FLAGS] == 1, ranges, new StringBuilder(charClass.Substring(end, myCategoryLength)));
         }
 
         /// <summary>
@@ -1045,9 +1032,6 @@ namespace Peachpie.Library.RegularExpressions
             vsb[SETLENGTH] = (char)(vsb.Length - SETSTART);
 
             vsb.Append(_categories.ToString());
-
-            if (_subtractor != null)
-                vsb.Append(_subtractor.ToStringClass());
 
             return vsb.ToString();
         }
