@@ -99,6 +99,19 @@ namespace Peachpie.Library.RegularExpressions.Tests
             Assert.False(match(pattern, @"MyClass\").Success);
         }
 
+        [Theory]
+        [InlineData(@"{\(([^()]|(?0))*\)}A")]
+        [InlineData(@"{\(([^()]|(?R))*\)}A")]
+        public void TestEntirePatternRecursion(string pattern)
+        {
+            Assert.True(match(pattern, "()").Success);
+            Assert.True(match(pattern, "(a(b)c)").Success);
+            Assert.True(match(pattern, "(a(sa(asa)bn)d(n))").Success);
+            Assert.False(match(pattern, "(()").Success);
+            Assert.False(match(pattern, "(()()(())").Success);
+            Assert.False(match(pattern, "a(b)").Success);
+        }
+
         [Fact]
         public void TestSubRoutineDefinitionConstruct()
         {

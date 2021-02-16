@@ -1132,6 +1132,16 @@ namespace Peachpie.Library.RegularExpressions
 
                 return new RegexNode(RegexNode.CallSubroutine, _options, subpatternIndex);
             }
+            else if (CharsRight() >= 1 && RightChar() == 'R')  // Entire pattern recursion (?R)
+            {
+                MoveRight();
+                if (CharsRight() == 0 || RightCharMoveRight() != ')')
+                {
+                    goto BreakRecognize;
+                }
+
+                return new RegexNode(RegexNode.CallSubroutine, _options, 0);
+            }
 
             while (true)
             {
