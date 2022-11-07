@@ -35,7 +35,13 @@ namespace Peachpie.Library.RegularExpressions.Tests
 
             match(@"/^[\x{9}\x{A}\x{D}\x{20}-\x{7E}\x{A0}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]*$/Du", "");
         }
-        
+
+        [Fact]
+        public void Test3()
+        {
+            Assert.True(match("/^[0-2]?[0-9]:[0-5][0-9](?::[0-5][0-9](?:\\.[0-9]{1,6})?)?$/", "22:00").Success);
+        }
+
         [Fact]
         public void TestHexDigits()
         {
