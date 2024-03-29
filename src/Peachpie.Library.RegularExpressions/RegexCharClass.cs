@@ -74,6 +74,8 @@ namespace Peachpie.Library.RegularExpressions
         internal const string ECMADigitClass = "\x00\x02\x00" + ECMADigitSet;
         internal const string NotECMADigitClass = "\x01\x02\x00" + ECMADigitSet;
 
+        private const string HanClass = "\u2E80\u2FE0\u2FF0\u3040\u3400\u4DC0\u4E00\uA000\uF900\uFB00\U00016FE0\U00017000\U00020000\U0002A6E0\U0002A700\U0002EE60\U0002F800\U0002FA20\U00030000\U000323B0";
+
         internal const string AnyClass = "\x00\x01\x00\x00";
         internal const string EmptyClass = "\x00\x00\x00";
 
@@ -142,6 +144,8 @@ namespace Peachpie.Library.RegularExpressions
          *   XML schema spec (http://www.w3.org/TR/2001/PR-xmlschema-2-20010316/#charcter-classes), Unicode 4.0 spec (www.unicode.org),
          *   and Perl 5.6 (see Programming Perl, 3rd edition page 167).   Three blocks defined by Perl (and here) may
          *   not be in the Unicode: IsHighPrivateUseSurrogates, IsHighSurrogates, and IsLowSurrogates.
+         *   
+         *   Additional blocks listed at https://en.wikipedia.org/wiki/Unicode_block .
          *
         **/
         // Has to be sorted by the first column
@@ -159,6 +163,7 @@ namespace Peachpie.Library.RegularExpressions
             new[] {"Greek",                               "\u0370\u0400"},
             new[] {"Gujarati",                            "\u0A80\u0B00"},
             new[] {"Gurmukhi",                            "\u0A00\u0A80"},
+            new[] {"Han",                                 HanClass },
             new[] {"Hanunoo",                             "\u1720\u1740"},
             new[] {"Hebrew",                              "\u0590\u0600"},
             new[] {"Hiragana",                            "\u3040\u30A0"},
