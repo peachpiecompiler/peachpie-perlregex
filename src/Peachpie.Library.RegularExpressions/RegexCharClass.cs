@@ -20,6 +20,7 @@
 //      m+1...n The categories.  This is a list of UnicodeCategory enum values which describe categories
 //              included in this class.
 
+using Peachpie.Library.RegularExpressions.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -98,7 +99,7 @@ namespace Peachpie.Library.RegularExpressions
 
             // InternalRegexIgnoreCase = {LowercaseLetter} OR {TitlecaseLetter} OR {UppercaseLetter}
             // !!!This category should only ever be used in conjunction with RegexOptions.IgnoreCase code paths!!!
-            { "__InternalRegexIgnoreCase__", "\u0000\u0002\u0003\u0001\u0000" },
+            { InternalRegexIgnoreCase, "\u0000\u0002\u0003\u0001\u0000" },
 
             // Marks
             { "Mc", "\u0007" }, // UnicodeCategory.SpacingCombiningMark + 1
@@ -486,7 +487,7 @@ namespace Peachpie.Library.RegularExpressions
         /// <summary>
         /// Adds a set (specified by its string representation) to the class.
         /// </summary>
-        private void AddSet(string set)
+        private void AddSet(ReadOnlySpan<char> set)
         {
             int i;
 
@@ -517,24 +518,32 @@ namespace Peachpie.Library.RegularExpressions
             }
         }
 
-        public void AddCategoryFromName(string categoryName, bool invert, bool caseInsensitive, int currentPos)
+        public void AddCategoryFromName(ReadOnlySpan<char> categoryName, bool invert, bool caseInsensitive, int currentPos)
         {
-            if (s_definedCategories.TryGetValue(categoryName, out string category) && !categoryName.Equals(InternalRegexIgnoreCase))
+            if (!categoryName.Equals(InternalRegexIgnoreCase, StringComparison.Ordinal) &&
+                s_definedCategories.TryGetValue(categoryName.ToString(), out string category)
+                )
             {
                 if (caseInsensitive)
                 {
-                    if (categoryName.Equals("Ll") || categoryName.Equals("Lu") || categoryName.Equals("Lt"))
+                    if (categoryName.Equals("Ll", StringComparison.Ordinal) || categoryName.Equals("Lu", StringComparison.Ordinal) || categoryName.Equals("Lt", StringComparison.Ordinal))
+                    {
                         // when RegexOptions.IgnoreCase is specified then {Ll}, {Lu}, and {Lt} cases should all match
                         category = s_definedCategories[InternalRegexIgnoreCase];
+                    }
                 }
 
                 if (invert)
+                {
                     category = NegateCategory(category); // negate the category
+                }
 
                 _categories.Append(category);
             }
             else
+            {
                 AddSet(SetFromProperty(categoryName, invert, currentPos));
+            }
         }
 
         private void AddCategory(string category)
@@ -629,14 +638,14 @@ namespace Peachpie.Library.RegularExpressions
             if (negate)
             {
                 if (ecma)
-                    AddSet(NotECMAWordSet);
+                    AddSet(NotECMAWordSet.AsSpan());
                 else
                     AddCategory(NotWord);
             }
             else
             {
                 if (ecma)
-                    AddSet(ECMAWordSet);
+                    AddSet(ECMAWordSet.AsSpan());
                 else
                     AddCategory(Word);
             }
@@ -647,14 +656,14 @@ namespace Peachpie.Library.RegularExpressions
             if (negate)
             {
                 if (ecma)
-                    AddSet(NotECMASpaceSet);
+                    AddSet(NotECMASpaceSet.AsSpan());
                 else
                     AddCategory(NotSpace);
             }
             else
             {
                 if (ecma)
-                    AddSet(ECMASpaceSet);
+                    AddSet(ECMASpaceSet.AsSpan());
                 else
                     AddCategory(Space);
             }
@@ -665,12 +674,12 @@ namespace Peachpie.Library.RegularExpressions
             if (ecma)
             {
                 if (negate)
-                    AddSet(NotECMADigitSet);
+                    AddSet(NotECMADigitSet.AsSpan());
                 else
-                    AddSet(ECMADigitSet);
+                    AddSet(ECMADigitSet.AsSpan());
             }
             else
-                AddCategoryFromName("Nd", negate, false, currentPos);
+                AddCategoryFromName("Nd".AsSpan(), negate, false, currentPos);
         }
 
         public static string ConvertOldStringsToClass(string set, string category)
@@ -1097,14 +1106,14 @@ namespace Peachpie.Library.RegularExpressions
             }
         }
 
-        private static string SetFromProperty(string capname, bool invert, int currentPos)
+        private static ReadOnlySpan<char> SetFromProperty(ReadOnlySpan<char> capname, bool invert, int currentPos)
         {
             int min = 0;
             int max = s_propTable.Length;
             while (min != max)
             {
                 int mid = (min + max) / 2;
-                int res = string.Compare(capname, s_propTable[mid][0], StringComparison.Ordinal);
+                int res = capname.CompareTo(s_propTable[mid][0].AsSpan(), StringComparison.Ordinal);
                 if (res < 0)
                     max = mid;
                 else if (res > 0)
@@ -1117,18 +1126,18 @@ namespace Peachpie.Library.RegularExpressions
                     {
                         if (set[0] == NullChar)
                         {
-                            return set.Substring(1);
+                            return set.AsSpan(1);
                         }
-                        return NullCharString + set;
+                        return (NullCharString + set).AsSpan();
                     }
                     else
                     {
-                        return set;
+                        return set.AsSpan();
                     }
                 }
             }
 
-            throw new RegexParseException(currentPos - capname.Length - 1, string.Format(SR.UnknownProperty, capname));
+            throw new RegexParseException(currentPos - capname.Length - 1, string.Format(SR.UnknownProperty, capname.ToString()));
         }
 
 #if DEBUG

@@ -887,10 +887,13 @@ namespace Peachpie.Library.RegularExpressions
                             {
                                 if (inRange)
                                     throw MakeException(string.Format(SR.BadClassInCharRange, ch));
+
                                 cc.AddCategoryFromName(ParseProperty(), (ch != 'p'), caseInsensitive, _currentPos + _offsetPos);
                             }
                             else
+                            {
                                 ParseProperty();
+                            }
 
                             continue;
 
@@ -2103,7 +2106,7 @@ namespace Peachpie.Library.RegularExpressions
         /*
          * Scans X for \p{X} or \P{X}
          */
-        private string ParseProperty()
+        private ReadOnlySpan<char> ParseProperty()
         {
             if (CharsRight() < 1)
             {
@@ -2115,8 +2118,9 @@ namespace Peachpie.Library.RegularExpressions
             {
                 // shorthand syntax for \p{Letter}
                 return "LMZSNPC".IndexOf(ch) >= 0
-                    ? ch.ToString()
-                    : throw MakeException(SR.MalformedSlashP);
+                    ? new ReadOnlySpan<char>(new[] { ch }) // NET7: use the new .ctor(char)
+                    : throw MakeException(SR.MalformedSlashP)
+                    ;
             }
 
             int startpos = Textpos();
@@ -2129,7 +2133,7 @@ namespace Peachpie.Library.RegularExpressions
                     break;
                 }
             }
-            string capname = _pattern.Slice(startpos, Textpos() - startpos).ToString();
+            var capname = _pattern.Slice(startpos, Textpos() - startpos);
 
             if (CharsRight() == 0 || RightCharMoveRight() != '}')
             {
