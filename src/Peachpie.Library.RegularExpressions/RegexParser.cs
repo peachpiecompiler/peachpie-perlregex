@@ -2213,6 +2213,9 @@ namespace Peachpie.Library.RegularExpressions
                 case 'x': // PCRE_EXTENDED
                     return RegexOptions.PCRE_EXTENDED;
 
+                case 'n': // PCRE_NO_AUTO_CAPTURE
+                    return RegexOptions.PCRE2_NO_AUTO_CAPTURE;
+
                 case 'e': // PREG_REPLACE_EVAL // deprecated as of PHP 7.0
                     //return RegexOptions.PREG_REPLACE_EVAL;
                     return 0;

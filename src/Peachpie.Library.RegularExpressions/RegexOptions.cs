@@ -50,11 +50,16 @@ namespace Peachpie.Library.RegularExpressions
         /// </summary>
         PCRE2_DUPNAMES = 0x10000,           // J
 
+        /// <summary>
+        /// Disables the use of numbered capturing parentheses in the pattern.
+        /// </summary>
+        PCRE2_NO_AUTO_CAPTURE = 0x20000,    // n
+
         ///// <summary>
         ///// Evaluate as PHP code.
         ///// Deprecated and removed.
         ///// </summary>
-        //PREG_REPLACE_EVAL = 0x10000,        // e
+        //PREG_REPLACE_EVAL = 0x40000,        // e
 
         //
         // PCRE options for newline handling
