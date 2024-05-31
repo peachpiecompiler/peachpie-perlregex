@@ -43,6 +43,19 @@ namespace Peachpie.Library.RegularExpressions.Tests
         }
 
         [Fact]
+        public void TestNoAutoCapture()
+        {
+            var m1 = match("/(?:a|b)c(?:d|e)/", "ace"); // groups 0
+            var m2 = match("/(a|b)c(d|e)/n", "ace"); // groups 0
+            var m3 = match("/(a|b)c(d|e)/", "ace"); // groups 0,1,2
+
+            Assert.Equal(m1.PcreGroups.Count, m2.PcreGroups.Count);
+            Assert.True(m3.PcreGroups.Count > m2.PcreGroups.Count);
+            //Assert.(1, m2.PcreGroups.Count);
+        }
+
+
+        [Fact]
         public void TestHexDigits()
         {
             Assert.True(match(@"/^[\x0-\x7f]*$/", "ABC").Success);
