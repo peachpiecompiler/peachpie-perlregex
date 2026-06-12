@@ -164,6 +164,7 @@ namespace Peachpie.Library.RegularExpressions
             new[] {"Gujarati",                            "\u0A80\u0B00"},
             new[] {"Gurmukhi",                            "\u0A00\u0A80"},
             new[] {"Han",                                 HanClass },
+            new[] {"Hangul",                              "\uAC00\uD7B0"},
             new[] {"Hanunoo",                             "\u1720\u1740"},
             new[] {"Hebrew",                              "\u0590\u0600"},
             new[] {"Hiragana",                            "\u3040\u30A0"},
